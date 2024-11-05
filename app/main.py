@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.config import Settings
 from app.rabbitmq_client import RabbitMQClient
+from app.routers.example_router import router as example_router
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -57,3 +58,5 @@ async def root():
     Basic root endpoint to test if the service is running.
     """
     return {"message": "coreService is up and running!"}
+
+app.include_router(example_router)
