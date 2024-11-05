@@ -133,3 +133,8 @@ cython_debug/
 # Local .env file
 .env
 .env.*.local
+
+venv
+venv/*
+
+.idea

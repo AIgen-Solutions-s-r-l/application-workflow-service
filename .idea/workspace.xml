@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="983a6616-7029-481d-9598-338ed4ce4f6d" name="Changes" comment="Update IDE and project configurations&#10;&#10;Revised IDE configuration to include Python run settings and Docker deployment settings. Updated `.gitignore` to exclude common Python, environment, and IDE-specific files. Corrected import in `app/config.py` for settings management.">
-      <change beforePath="$PROJECT_DIR$/.idea/coreService.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/coreService.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/app/main.py" afterDir="false" />
-    </list>
+    <list default="true" id="983a6616-7029-481d-9598-338ed4ce4f6d" name="Changes" comment="Add example router inclusion and update IDE configuration&#10;&#10;Included example router in the FastAPI application setup to streamline routing. Updated IDE configuration files to reflect new project changes and included additional paths for exclusion." />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -123,7 +119,7 @@
       <workItem from="1730833343031" duration="333000" />
       <workItem from="1730833683785" duration="3289000" />
       <workItem from="1730842364331" duration="19000" />
-      <workItem from="1730842415654" duration="334000" />
+      <workItem from="1730842415654" duration="761000" />
     </task>
     <task id="LOCAL-00001" summary="Add initial setup for coreService with FastAPI and RabbitMQ client&#10;&#10;Introduced FastAPI application setup with a RabbitMQ client for message handling. Implemented basic configuration, Dockerfile, and example router. Added necessary project files for environment management and IDE configuration.">
       <option name="closed" value="true" />
@@ -141,7 +137,15 @@
       <option name="project" value="LOCAL" />
       <updated>1730836882260</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Add example router inclusion and update IDE configuration&#10;&#10;Included example router in the FastAPI application setup to streamline routing. Updated IDE configuration files to reflect new project changes and included additional paths for exclusion.">
+      <option name="closed" value="true" />
+      <created>1730843028860</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1730843028860</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -150,7 +154,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Add initial setup for coreService with FastAPI and RabbitMQ client&#10;&#10;Introduced FastAPI application setup with a RabbitMQ client for message handling. Implemented basic configuration, Dockerfile, and example router. Added necessary project files for environment management and IDE configuration." />
     <MESSAGE value="Update IDE and project configurations&#10;&#10;Revised IDE configuration to include Python run settings and Docker deployment settings. Updated `.gitignore` to exclude common Python, environment, and IDE-specific files. Corrected import in `app/config.py` for settings management." />
-    <option name="LAST_COMMIT_MESSAGE" value="Update IDE and project configurations&#10;&#10;Revised IDE configuration to include Python run settings and Docker deployment settings. Updated `.gitignore` to exclude common Python, environment, and IDE-specific files. Corrected import in `app/config.py` for settings management." />
+    <MESSAGE value="Add example router inclusion and update IDE configuration&#10;&#10;Included example router in the FastAPI application setup to streamline routing. Updated IDE configuration files to reflect new project changes and included additional paths for exclusion." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add example router inclusion and update IDE configuration&#10;&#10;Included example router in the FastAPI application setup to streamline routing. Updated IDE configuration files to reflect new project changes and included additional paths for exclusion." />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
