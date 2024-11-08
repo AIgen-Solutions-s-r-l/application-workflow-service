@@ -1,3 +1,4 @@
+
 # Documentazione del Progetto CoreService
 
 Benvenuti nella documentazione del progetto **CoreService**. Questa documentazione fornisce una panoramica completa del progetto, incluse le istruzioni per l'installazione, l'uso, e la manutenzione.
@@ -16,7 +17,7 @@ Benvenuti nella documentazione del progetto **CoreService**. Questa documentazio
 
 ## Introduzione
 
-CoreService è un'applicazione progettata per [descrizione del progetto]. Questa soluzione è costruita utilizzando Python e offre funzionalità di [funzionalità principali].
+CoreService è un'applicazione progettata per gestire messaggi asincroni tramite RabbitMQ e fornire un'interfaccia API costruita con FastAPI. Questa soluzione è costruita utilizzando Python e offre funzionalità per il processamento e la gestione dei messaggi.
 
 ## Installazione
 
@@ -60,23 +61,27 @@ coreService/
 ├── README.md 
 ├── requirements.txt 
 ├── docs/ 
-│ └── index.md
+│   └── index.md
 ├── app/ 
-│ ├── routers/ 
-│ │ └── example_router.py 
-│ ├── core/ 
-│ │ └── config.py 
-│ ├── tests/ 
-│ │ ├── test_example_router.py 
-│ │ └── test_main.py 
-│ ├── rabbitmq_client.py 
-│ └── main.py 
+│   ├── routers/ 
+│   │   └── example_router.py 
+│   ├── core/ 
+│   │   └── config.py 
+│   ├── models/
+│   │   └── __init__.py
+│   ├── services/
+│   │   └── message_sender.py
+│   ├── tests/ 
+│   │   ├── test_example_router.py 
+│   │   └── test_main.py 
+│   ├── rabbitmq_client.py 
+│   └── main.py 
 └── pytest.ini
 ```
 
 ## Configurazione
 
-Configurazioni principali del progetto si trovano in `app/core/config.py`. Assicurati di impostare le variabili di ambiente richieste.
+Le configurazioni principali del progetto si trovano in `app/core/config.py`. Assicurati di impostare le variabili di ambiente richieste, inclusi i dettagli per la connessione a RabbitMQ.
 
 ## Esecuzione dei Test
 
