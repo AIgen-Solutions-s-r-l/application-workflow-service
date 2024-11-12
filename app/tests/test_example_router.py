@@ -1,8 +1,13 @@
 # tests/test_main.py
 import pytest
+import sys
 from httpx import AsyncClient, ASGITransport
-from app.main import app
+from pathlib import Path
 
+# Add the parent directory to the sys.path
+sys.path.append(str(Path(__file__).resolve().parent.parent))
+
+from app.main import app  # Now you can import app
 
 @pytest.mark.asyncio
 async def test_root():
