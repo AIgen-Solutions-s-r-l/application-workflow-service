@@ -4,9 +4,9 @@ from threading import Thread
 
 from fastapi import FastAPI
 
-from app.core.config import Settings
-from app.rabbitmq_client import RabbitMQClient
-from app.routers.example_router import router as example_router
+from core.config import Settings
+from core.rabbitmq_client import RabbitMQClient
+from routers.example_router import router as example_router
 
 logging.basicConfig(level=logging.DEBUG)
 
