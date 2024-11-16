@@ -4,9 +4,9 @@ from threading import Thread
 from fastapi import FastAPI
 import asyncio  # Import asyncio for running async calls in threads
 
-from core.config import Settings
-from core.rabbitmq_client import RabbitMQClient
-from services.resume_ops import get_resume_by_user_id, save_application_with_resume
+from app.core.config import Settings
+from app.core.rabbitmq_client import RabbitMQClient
+from app.services.resume_ops import get_resume_by_user_id, save_application_with_resume
 from app.routers.app_router import router as application_router
 
 logging.basicConfig(level=logging.DEBUG)
@@ -74,4 +74,4 @@ app = FastAPI(lifespan=lifespan)
 async def root():
     return {"message": "Application Manager Service is running!"}
 
-app.include_router(application_router.router)
+app.include_router(application_router)

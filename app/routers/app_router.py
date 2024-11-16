@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from services.resume_ops import get_resume_by_user_id, save_application_with_resume
+from app.services.resume_ops import get_resume_by_user_id, save_application_with_resume
 import logging
 
 router = APIRouter()
