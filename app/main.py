@@ -6,7 +6,7 @@ import asyncio  # Import asyncio for running async calls in threads
 
 from core.config import Settings
 from core.rabbitmq_client import RabbitMQClient
-from core.mongo import get_resume_by_user_id, save_application_with_resume
+from services.resume_ops import get_resume_by_user_id, save_application_with_resume
 from routers.example_router import router as example_router
 
 logging.basicConfig(level=logging.DEBUG)
