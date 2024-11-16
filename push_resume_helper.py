@@ -1,5 +1,9 @@
 import json
 from app.core.mongo import resumes_collection
+import asyncio
+
+import json
+from app.core.mongo import resumes_collection
 
 async def add_resume_from_file(json_file_path: str):
     """
@@ -14,23 +18,33 @@ async def add_resume_from_file(json_file_path: str):
     try:
         # Load resume data from the JSON file
         with open(json_file_path, 'r') as file:
-            resume_data = json.load(file)
+            data = json.load(file)
         
-        # Ensure required fields are present
-        if "user_id" not in resume_data or "resume" not in resume_data:
-            raise ValueError("JSON file must contain 'user_id' and 'resume' fields.")
-        
-        # Insert the resume data into the resumes collection
-        result = await resumes_collection.insert_one(resume_data)
-        
-        return result.inserted_id
+        # Ensure JSON has a list structure as per your example
+        if isinstance(data, list) and data:
+            # Extract user_id and treat the rest as resume data
+            document = {
+                "user_id": data[0].get("user_id"),
+                "resume": data[0]  # Treat entire object as the resume
+            }
+            
+            # Validate user_id presence
+            if document["user_id"] is None:
+                raise ValueError("JSON file must contain 'user_id' field in each entry.")
+            
+            # Insert into MongoDB
+            result = await resumes_collection.insert_one(document)
+            return result.inserted_id
 
+        else:
+            raise ValueError("JSON file must contain a list with resume entries.")
+    
     except Exception as e:
         print(f"An error occurred while adding the resume: {e}")
         return None
+    
+async def main():
+    resume_id = await add_resume_from_file("resume.json")
+    print(f"Inserted resume with ID: {resume_id}")
 
-# main
-if __name__ == "__main__":
-    json_file_path = "resume.json"
-    inserted_id = add_resume_from_file(json_file_path)
-    print(f"Inserted resume with ID: {inserted_id}")
+asyncio.run(main())

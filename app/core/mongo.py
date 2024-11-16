@@ -9,6 +9,6 @@ MONGO_DETAILS = settings.mongodb
 
 # Create the MongoDB client
 client = AsyncIOMotorClient(MONGO_DETAILS)
-database = client.your_database_name
+database = client["resumes"]
 applications_collection = database['jobs_to_apply_per_user']
 resumes_collection = database['resumes']

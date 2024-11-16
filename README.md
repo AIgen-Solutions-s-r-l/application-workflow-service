@@ -1,6 +1,6 @@
-# CoreService
+# ApplicationManagerService
 
-CoreService is a Python application that acts as a core service, utilizing RabbitMQ for messaging and providing various endpoints for interaction.
+ApplicationManagerService is a Python-based backend service designed to manage application workflows and data handling. It leverages RabbitMQ for asynchronous message processing and MongoDB for storage, offering API endpoints for streamlined interaction with user application data, resume processing, and job application tracking.
 
 ## Table of Contents
 
