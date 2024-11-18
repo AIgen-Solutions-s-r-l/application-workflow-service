@@ -39,6 +39,10 @@ async def retrieve_and_save_application(user_id: str):
         if resume is None:
             raise HTTPException(status_code=404, detail="Resume not found")
 
+        # TODO
+        # SEND CV TO RabbitMQ TO apply_to_job_queue
+        # ... Matching Service will do stuff and send back the list of jobs to apply under below:
+
         # Retrieve jobs_to_apply list from RabbitMQ
         jobs_to_apply_list = rabbitmq_client.get_jobs_to_apply()
         
