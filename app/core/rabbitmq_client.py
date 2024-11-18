@@ -1,34 +1,22 @@
 import logging
 import time
+import json
 from typing import Callable, Any, Optional
-
 import pika
 import pika.channel
 import pika.frame
 
-
 class RabbitMQClient:
-    """
-    RabbitMQ Client to handle asynchronous connections, publishing, and consuming of messages.
-    Uses pika.SelectConnection for asynchronous communication with RabbitMQ.
-    """
-
     def __init__(self, rabbitmq_url: str, queue: str,
                  callback: Callable[[Any, pika.spec.Basic.Deliver, pika.spec.BasicProperties, bytes], None]) -> None:
-        """
-        Initializes the RabbitMQClient with a connection URL, queue name, and message callback function.
-        """
         self.rabbitmq_url = rabbitmq_url
         self.queue = queue
         self.callback = callback
         self.connection: Optional[pika.SelectConnection] = None
         self.channel: Optional[pika.channel.Channel] = None
-        self.should_reconnect = False  # Flag to control reconnection
+        self.should_reconnect = False
 
     def connect(self) -> None:
-        """
-        Establish an asynchronous connection to RabbitMQ and declare the queue.
-        """
         logging.info("Connecting to RabbitMQ")
         try:
             self.connection = pika.SelectConnection(
@@ -65,20 +53,14 @@ class RabbitMQClient:
         logging.info("Started consuming messages")
 
     def schedule_reconnect(self, delay: int = 5) -> None:
-        """
-        Schedule reconnection attempt after a delay.
-        """
         logging.info(f"Reconnecting to RabbitMQ in {delay} seconds")
         self.should_reconnect = True
         if self.connection and self.connection.is_closing:
             self.connection.ioloop.call_later(delay, self.connect)
         else:
-            time.sleep(delay)  # Fallback for manual control if ioloop not started
+            time.sleep(delay)
 
     def start(self) -> None:
-        """
-        Start the connection's I/O loop.
-        """
         self.connect()
         if self.connection:
             try:
@@ -87,11 +69,24 @@ class RabbitMQClient:
                 self.stop()
 
     def stop(self) -> None:
-        """
-        Gracefully stop the connection's I/O loop.
-        """
         self.should_reconnect = False
         if self.connection:
             self.connection.close()
             self.connection.ioloop.stop()
             logging.info("RabbitMQ connection closed and I/O loop stopped")
+
+    def get_jobs_to_apply(self) -> list:
+        """Retrieve a single JSON message from 'jobs_to_apply_queue' and parse it as the jobs_to_apply list."""
+        job_list = []
+        
+        def callback(ch, method, properties, body):
+            nonlocal job_list
+            try:
+                job_list = json.loads(body.decode())
+            except json.JSONDecodeError as e:
+                logging.error(f"Failed to decode jobs_to_apply JSON: {e}")
+
+        self.callback = callback
+        self.start()  # Start consuming messages (blocking until the message is received)
+        
+        return job_list  # Return the parsed job list
