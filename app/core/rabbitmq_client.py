@@ -49,8 +49,8 @@ class RabbitMQClient:
 
     def on_queue_declared(self, frame: pika.frame.Method) -> None:
         logging.info(f"Queue '{self.queue}' declared")
-        self.channel.basic_consume(queue=self.queue, on_message_callback=self.callback, auto_ack=True)
-        logging.info("Started consuming messages")
+        # Remove continuous consumption setup
+        # self.channel.basic_consume(queue=self.queue, on_message_callback=self.callback, auto_ack=True)
 
     def schedule_reconnect(self, delay: int = 5) -> None:
         logging.info(f"Reconnecting to RabbitMQ in {delay} seconds")
@@ -85,8 +85,16 @@ class RabbitMQClient:
                 job_list = json.loads(body.decode())
             except json.JSONDecodeError as e:
                 logging.error(f"Failed to decode jobs_to_apply JSON: {e}")
+            finally:
+                if self.connection:
+                    self.stop()  # Stop after retrieving a single message
 
+        # Temporarily override the callback function
         self.callback = callback
-        self.start()  # Start consuming messages (blocking until the message is received)
+
+        # Connect, fetch one message, and stop (no continuous consumption)
+        self.connect()  
+        if self.connection:
+            self.connection.ioloop.start()
         
         return job_list  # Return the parsed job list
