@@ -1,100 +1,49 @@
-import logging
-import time
+import aio_pika
+import asyncio
 import json
-from typing import Callable, Any, Optional
-import pika
-import pika.channel
-import pika.frame
+import logging
 
-class RabbitMQClient:
-    def __init__(self, rabbitmq_url: str, queue: str,
-                 callback: Callable[[Any, pika.spec.Basic.Deliver, pika.spec.BasicProperties, bytes], None]) -> None:
+class AsyncRabbitMQClient:
+    def __init__(self, rabbitmq_url: str, queue: str):
         self.rabbitmq_url = rabbitmq_url
         self.queue = queue
-        self.callback = callback
-        self.connection: Optional[pika.SelectConnection] = None
-        self.channel: Optional[pika.channel.Channel] = None
-        self.should_reconnect = False
+        self.connection = None
+        self.channel = None
 
-    def connect(self) -> None:
-        logging.info("Connecting to RabbitMQ")
-        try:
-            self.connection = pika.SelectConnection(
-                pika.URLParameters(self.rabbitmq_url),
-                on_open_callback=self.on_connection_open,
-                on_open_error_callback=self.on_connection_open_error,
-                on_close_callback=self.on_connection_closed
-            )
-        except Exception as e:
-            logging.error(f"Connection setup failed: {e}")
-            self.schedule_reconnect()
+    async def connect(self) -> None:
+        """Establish an asynchronous connection to RabbitMQ using aio_pika."""
+        self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
+        self.channel = await self.connection.channel()
+        await self.channel.declare_queue(self.queue, durable=True)
+        logging.info("RabbitMQ connection and channel initialized.")
 
-    def on_connection_open(self, connection: pika.SelectConnection) -> None:
-        logging.info("RabbitMQ connection opened")
-        connection.channel(on_open_callback=self.on_channel_open)
+    async def send_message(self, queue: str, message: dict):
+        """Asynchronously send a message to the specified queue."""
+        if not self.channel:
+            await self.connect()
 
-    def on_connection_open_error(self, connection: pika.SelectConnection, error: Exception) -> None:
-        logging.error(f"Failed to open connection: {error}")
-        self.schedule_reconnect()
+        message_body = json.dumps(message).encode()
+        await self.channel.default_exchange.publish(
+            aio_pika.Message(body=message_body, delivery_mode=aio_pika.DeliveryMode.PERSISTENT),
+            routing_key=queue
+        )
+        logging.info(f"Message sent to queue '{queue}': {message}")
 
-    def on_connection_closed(self, connection: pika.SelectConnection, reason: Any) -> None:
-        logging.warning(f"Connection closed: {reason}")
-        if self.should_reconnect:
-            self.schedule_reconnect()
+    async def get_message(self) -> str:
+        """Retrieve a single message from the queue asynchronously."""
+        if not self.channel:
+            await self.connect()
 
-    def on_channel_open(self, channel: pika.channel.Channel) -> None:
-        logging.info("RabbitMQ channel opened")
-        self.channel = channel
-        self.channel.queue_declare(queue=self.queue, callback=self.on_queue_declared)
+        queue = await self.channel.declare_queue(self.queue, durable=True)
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                async with message.process():
+                    body = message.body.decode('utf-8')
+                    logging.info(f"Message received from queue '{self.queue}': {body}")
+                    return body
 
-    def on_queue_declared(self, frame: pika.frame.Method) -> None:
-        logging.info(f"Queue '{self.queue}' declared")
-        # Remove continuous consumption setup
-        # self.channel.basic_consume(queue=self.queue, on_message_callback=self.callback, auto_ack=True)
-
-    def schedule_reconnect(self, delay: int = 5) -> None:
-        logging.info(f"Reconnecting to RabbitMQ in {delay} seconds")
-        self.should_reconnect = True
-        if self.connection and self.connection.is_closing:
-            self.connection.ioloop.call_later(delay, self.connect)
-        else:
-            time.sleep(delay)
-
-    def start(self) -> None:
-        self.connect()
+    async def close_connection(self):
+        """Close the RabbitMQ connection."""
         if self.connection:
-            try:
-                self.connection.ioloop.start()
-            except KeyboardInterrupt:
-                self.stop()
-
-    def stop(self) -> None:
-        self.should_reconnect = False
-        if self.connection:
-            self.connection.close()
-            self.connection.ioloop.stop()
-            logging.info("RabbitMQ connection closed and I/O loop stopped")
-
-    def get_jobs_to_apply(self) -> list:
-        """Retrieve a single JSON message from 'jobs_to_apply_queue' and parse it as the jobs_to_apply list."""
-        job_list = []
-        
-        def callback(ch, method, properties, body):
-            nonlocal job_list
-            try:
-                job_list = json.loads(body.decode())
-            except json.JSONDecodeError as e:
-                logging.error(f"Failed to decode jobs_to_apply JSON: {e}")
-            finally:
-                if self.connection:
-                    self.stop()  # Stop after retrieving a single message
-
-        # Temporarily override the callback function
-        self.callback = callback
-
-        # Connect, fetch one message, and stop (no continuous consumption)
-        self.connect()  
-        if self.connection:
-            self.connection.ioloop.start()
-        
-        return job_list  # Return the parsed job list
+            await self.connection.close()
+            logging.info("RabbitMQ connection closed.")
