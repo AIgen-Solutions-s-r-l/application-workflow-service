@@ -1,13 +1,7 @@
-# app/core/models/job.py
+# app/models/job.py
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
-
-# Definisci la base SQLAlchemy
-Base = declarative_base()
-
-
-# Definisci i modelli del database secondo la tua struttura
+from app.core.base import Base  # Import Base from core
 
 class Company(Base):
     __tablename__ = 'Companies'
@@ -19,17 +13,15 @@ class Company(Base):
     def __str__(self):
         return f"Company(id={self.company_id}, name={self.company_name})"
 
-
 class Location(Base):
     __tablename__ = 'Locations'
     location_id = Column(Integer, primary_key=True, autoincrement=True)
-    location = Column(String, nullable=False)  # Ad esempio, "Amsterdam, North Holland, Netherlands"
+    location = Column(String, nullable=False)
 
     jobs = relationship('Job', back_populates='location')
 
     def __str__(self):
         return f"Location(id={self.location_id}, location='{self.location}')"
-
 
 class Job(Base):
     __tablename__ = 'Jobs'

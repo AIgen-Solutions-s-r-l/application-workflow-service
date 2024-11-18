@@ -10,7 +10,10 @@ project_root = str(Path(__file__).parents[2])
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from app.core.database import Base, database_url
+from app.core.database import database_url
+# Import the Base and models from job.py instead
+from app.core.base import Base
+from app.models.job import Company, Location, Job
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 import asyncpg
@@ -103,13 +106,28 @@ async def verify_database() -> None:
                     SELECT table_name 
                     FROM information_schema.tables 
                     WHERE table_schema = 'public'
+                    ORDER BY table_name;
                 """)
             )
             tables = result.fetchall()
             if tables:
                 logger.info("Verified tables in database:")
                 for table in tables:
-                    logger.info(f"  - {table[0]}")
+                    # Get column information for each table
+                    columns_result = await conn.execute(
+                        text(f"""
+                            SELECT column_name, data_type, is_nullable
+                            FROM information_schema.columns
+                            WHERE table_name = '{table[0]}'
+                            ORDER BY ordinal_position;
+                        """)
+                    )
+                    columns = columns_result.fetchall()
+
+                    logger.info(f"\n  Table: {table[0]}")
+                    for column in columns:
+                        nullable = "NULL" if column[2] == "YES" else "NOT NULL"
+                        logger.info(f"    - {column[0]}: {column[1]} {nullable}")
             else:
                 logger.warning("No tables found in the database")
 
