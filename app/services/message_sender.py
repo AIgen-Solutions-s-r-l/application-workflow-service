@@ -54,7 +54,7 @@ class MessageSender:
 
         try:
             # Declare the queue to ensure it exists
-            self.channel.queue_declare(queue=queue, durable=True)
+            self.channel.queue_declare(queue=queue, durable=False)
             # Publish the message to the specified queue with persistence
             self.channel.basic_publish(
                 exchange='',

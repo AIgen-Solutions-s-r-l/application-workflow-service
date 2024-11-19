@@ -26,16 +26,18 @@ async def retrieve_and_save_application(user_id: str):
 
         # Send the resume to the apply_to_job_queue
         await rabbitmq_client.send_message(queue=settings.apply_to_job_queue, message=resume)
+        logger.info("Resume sent to apply_to_job_queue")
 
         # Wait for response from job_to_apply_queue
         jobs_to_apply = await rabbitmq_client.get_message()
+        logger.info(f"Jobs to apply received: {jobs_to_apply}")
 
         # Save the application with resume and jobs_to_apply list
-        application_id = save_application_with_resume(user_id, resume, jobs_to_apply)
-        return {"application_id": application_id}
+        application_id = await save_application_with_resume(user_id, resume, jobs_to_apply)
+
+        # Ensure application_id is JSON serializable
+        return {"application_id": str(application_id)}
 
     except Exception as e:
         logger.error(f"Failed to retrieve and save application for user_id {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to retrieve and save application")
-    finally:
-        await rabbitmq_client.close_connection()
