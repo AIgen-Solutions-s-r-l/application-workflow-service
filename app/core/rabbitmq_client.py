@@ -1,27 +1,30 @@
 import aio_pika
-import asyncio
 import json
 import logging
+
+logging.basicConfig(level=logging.INFO)
+
 
 class AsyncRabbitMQClient:
     def __init__(self, rabbitmq_url: str, queue: str):
         self.rabbitmq_url = rabbitmq_url
-        self.queue = queue
+        self.queue_name = queue
         self.connection = None
         self.channel = None
 
     async def connect(self) -> None:
         """Establish an asynchronous connection to RabbitMQ using aio_pika."""
+        logging.info("Connecting to RabbitMQ...")
         self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
         self.channel = await self.connection.channel()
-        await self.channel.declare_queue(self.queue, durable=True)
+        await self.channel.declare_queue(self.queue_name, durable=False)
         logging.info("RabbitMQ connection and channel initialized.")
 
-    async def send_message(self, queue: str, message: dict):
+    async def send_message(self, queue: str, message: dict) -> None:
         """Asynchronously send a message to the specified queue."""
         if not self.channel:
             await self.connect()
-
+        await self.channel.declare_queue(queue, durable=False)
         message_body = json.dumps(message).encode()
         await self.channel.default_exchange.publish(
             aio_pika.Message(body=message_body, delivery_mode=aio_pika.DeliveryMode.PERSISTENT),
@@ -33,13 +36,12 @@ class AsyncRabbitMQClient:
         """Retrieve a single message from the queue asynchronously."""
         if not self.channel:
             await self.connect()
-
-        queue = await self.channel.declare_queue(self.queue, durable=True)
+        queue = await self.channel.declare_queue(self.queue_name, durable=False)
         async with queue.iterator() as queue_iter:
             async for message in queue_iter:
                 async with message.process():
                     body = message.body.decode('utf-8')
-                    logging.info(f"Message received from queue '{self.queue}': {body}")
+                    logging.info(f"Message received from queue '{self.queue_name}': {body}")
                     return body
 
     async def close_connection(self):
