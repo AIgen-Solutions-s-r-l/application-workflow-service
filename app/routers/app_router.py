@@ -11,8 +11,46 @@ settings = Settings()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-@router.get("/applications/{user_id}", summary="Retrieve Resume and Save Application", response_description="Application ID")
+@router.get(
+    "/applications/{user_id}",
+    summary="Retrieve Resume and Save Application",
+    description="Retrieves the resume of a user by their ID, sends it to a queue for job application matching, "
+                "waits for a list of suitable jobs, and saves the application data.",
+    response_description="Application ID",
+    responses={
+        200: {
+            "description": "Application successfully retrieved and saved.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "application_id": "60f6c73f4e9d3e27e4f29d9f"
+                    }
+                }
+            }
+        },
+        404: {
+            "description": "Resume not found for the provided user ID."
+        },
+        500: {
+            "description": "Internal Server Error. Failed to retrieve and save application."
+        }
+    }
+)
 async def retrieve_and_save_application(user_id: str):
+    """
+    Retrieves the resume associated with the specified `user_id`, sends it to the `apply_to_job_queue`, waits for a list
+    of relevant jobs from the `job_to_apply_queue`, and saves an application entry with the resume and job list.
+
+    Args:
+        user_id (str): The ID of the user for whom to retrieve the resume.
+
+    Returns:
+        dict: A dictionary containing the `application_id` of the saved application.
+
+    Raises:
+        HTTPException 404: If the resume is not found.
+        HTTPException 500: For internal errors when saving the application.
+    """
     rabbitmq_client = AsyncRabbitMQClient(
         rabbitmq_url=settings.rabbitmq_url,
         queue=settings.job_to_apply_queue
