@@ -13,7 +13,6 @@ if project_root not in sys.path:
 from app.core.database import database_url
 # Import the Base and models from job.py instead
 from app.core.base import Base
-from app.models.job import Company, Location, Job
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
 import asyncpg
