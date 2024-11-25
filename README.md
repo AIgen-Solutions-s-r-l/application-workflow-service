@@ -1,276 +1,212 @@
-# ApplicationManagerService
 
-ApplicationManagerService is a Python-based backend service designed to manage application workflows and data handling. It leverages RabbitMQ for asynchronous message processing and MongoDB for storage, offering API endpoints for streamlined interaction with user application data, resume processing, and job application tracking.
+# Application Manager Service
+
+The **Application Manager Service** is a Python-based backend service designed to manage application workflows and handle user resumes and job tracking. It integrates with RabbitMQ for asynchronous message processing and MongoDB/PostgreSQL for data storage.
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Requirements](#requirements)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Application Workflow](#application-workflow)
 - [Running the Application](#running-the-application)
-- [Running Tests](#running-tests)
+- [Testing](#testing)
 - [Folder Structure](#folder-structure)
 - [API Endpoints](#api-endpoints)
 - [Contributing](#contributing)
 - [License](#license)
 
+---
+
+## Overview
+
+The Application Manager Service provides key functionalities such as:
+1. **Managing User Applications**: Handles user data and application workflows.
+2. **Resume Processing**: Validates and stores resumes for job applications.
+3. **Job Application Tracking**: Tracks the progress of applications.
+
+---
+
 ## Requirements
 
 - Python 3.12.3
 - RabbitMQ server
-- MongoDB
+- MongoDB server
+- PostgreSQL server
 - Virtualenv
+
+---
 
 ## Installation
 
-1. **Clone the repository:**
+1. **Clone the Repository**:
 
-    ```sh
+    ```bash
     git clone https://github.com/yourusername/application_manager_service.git
     cd application_manager_service
     ```
 
-2. **Create a virtual environment:**
+2. **Create a Virtual Environment**:
 
-    ```sh
+    ```bash
     python -m venv venv
     ```
 
-3. **Activate the virtual environment:**
-
-   - On Windows:
-
-       ```sh
-       venv\Scripts\activate
-       ```
-
-   - On macOS/Linux:
-
-       ```sh
-       source venv/bin/activate
-       ```
-
-4. **Install the dependencies:**
-
-    ```sh
-    pip install -r requirements.txt
-    ```
-
-## Configuration
-
-1. **Environment Variables:**
-
-   Create a `.env` file in the project root directory with the following content:
-
-    ```env
-    RABBITMQ_URL=amqp://guest:guest@localhost:5672/
-    SERVICE_NAME=application_manager_service
-    MONGO_URI=mongodb://localhost:27017/
-    ```
-
-   Adjust the values as needed.
-
-2. **Settings Configuration:**
-
-   The application settings are managed using `pydantic-settings`. Here is an example configuration class:
-
-    ```python
-    import os
-    from pydantic_settings import BaseSettings, SettingsConfigDict
-
-    class Settings(BaseSettings):
-        rabbitmq_url: str = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
-        service_name: str = "application_manager_service"
-        mongodb_uri: str = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-
-        model_config = SettingsConfigDict(env_file=".env")
-    ```
-
-## Running the Application
-
-To run the application, execute the following command:
-
-```sh
-python app/main.py
-```
-
-Ensure RabbitMQ server and MongoDB server are running and accessible via the URLs specified in your `.env` file.
-
-## Running Tests
-
-To run the test suite, use the following command:
-
-```sh
-pytest
-```
-
-The tests are located in the `app/tests` directory and are written using the `pytest` framework.
-
-## Folder Structure
-
-- `app/`: Contains the main application code.
-   - `core/`: Core functionalities and configurations.
-      - `config.py`: Application configuration.
-      - `database.py`: Database initialization and connection handling.
-      - `base.py`: Base classes and utilities.
-   - `models/`: Database models.
-      - `job.py`: Job-related models.
-      - `user.py`: User-related models.
-   - `routers/`: API endpoint routers.
-      - `app_router.py`: Main application router.
-   - `services/`: Service layer for business logic.
-      - `message_sender.py`: Message sending service using RabbitMQ.
-   - `scripts/`: Utility scripts.
-      - `init_db.py`: Initialize MongoDB with default data.
-   - `main.py`: Entry point of the application.
-- `tests/`: Contains unit and integration tests.
-
-## API Endpoints
-
-The API serves various endpoints to interact with the user application data. Here are some of the key endpoints:
-
-- **User Operations:**
-   - `GET /users`: Fetch all users.
-   - `POST /users`: Create a new user.
-- **Job Operations:**
-   - `GET /jobs`: Fetch all jobs.
-   - `POST /jobs`: Create a new job.
-- **Resume Operations:**
-   - `POST /resumes`: Process a resume.
-
-Refer to the specific router files in `app/routers` for comprehensive details on available endpoints.
-
-## Contributing
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`)
-3. Make your changes.
-4. Commit your changes (`git commit -am 'Add new feature'`)
-5. Push to the branch (`git push origin feature-branch`)
-6. Create a new Pull Request.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.# ApplicationManagerService
-
-ApplicationManagerService is a Python-based backend service designed to manage application workflows and data handling. It leverages RabbitMQ for asynchronous message processing and MongoDB for storage, offering API endpoints for streamlined interaction with user application data, resume processing, and job application tracking.
-
-## Table of Contents
-
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Running the Application](#running-the-application)
-- [Running Tests](#running-tests)
-- [Folder Structure](#folder-structure)
-- [Contributing](#contributing)
-- [License](#license)
-
-## Requirements
-
-- Python 3.12.7
-- RabbitMQ server
-- Virtualenv
-
-## Installation
-
-1. **Clone the repository:**
-
-    ```sh
-    git clone https://github.com/yourusername/coreService.git
-    cd coreService
-    ```
-
-2. **Create a virtual environment:**
-
-    ```sh
-    python -m venv venv
-    ```
-
-3. **Activate the virtual environment:**
+3. **Activate the Virtual Environment**:
 
     - On Windows:
 
-        ```sh
+        ```bash
         venv\Scripts\activate
         ```
 
     - On macOS/Linux:
 
-        ```sh
+        ```bash
         source venv/bin/activate
         ```
 
-4. **Install the dependencies:**
+4. **Install Dependencies**:
 
-    ```sh
+    ```bash
     pip install -r requirements.txt
     ```
 
+---
+
 ## Configuration
 
-1. **Environment Variables:**
+### Environment Variables
 
-    Create a `.env` file in the project root directory with the following content:
+Create a `.env` file in the project root directory with the following configuration:
 
-    ```env
-    RABBITMQ_URL=amqp://guest:guest@localhost:5672/
-    SERVICE_NAME=coreService
-    ```
+```env
+RABBITMQ_URL=amqp://guest:guest@localhost:5672/
+SERVICE_NAME=application_manager_service
+MONGO_URI=mongodb://localhost:27017/
+POSTGRES_URI=postgresql://user:password@localhost:5432/database
+```
 
-    Adjust the values as needed.
+### Database Setup
 
-2. **Settings Configuration:**
+Run the database initialization scripts to set up MongoDB and PostgreSQL:
 
-    The application settings are managed using `pydantic-settings`. Here is an example configuration class:
+- Use `init_db.py` for seeding MongoDB.
+- Ensure PostgreSQL is configured with the provided URI.
 
-    ```python
-    import os
-    from pydantic_settings import BaseSettings, SettingsConfigDict
+---
 
-    class Settings(BaseSettings):
-        rabbitmq_url: str = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
-        service_name: str = "coreService"
+## Application Workflow
 
-        model_config = SettingsConfigDict(env_file=".env")
-    ```
+1. **RabbitMQ Messaging**:
+   - Publishes messages to RabbitMQ queues for asynchronous processing.
+
+2. **Database Management**:
+   - Stores user and job data in MongoDB.
+   - Utilizes PostgreSQL for relational data management.
+
+3. **Resume Processing**:
+   - Processes and validates resumes using the logic in `resume_ops.py`.
+
+4. **API Interaction**:
+   - Provides endpoints for managing resumes, jobs, and user data.
+
+---
 
 ## Running the Application
 
-To run the application, execute the following command:
+Run the application using the following command:
 
-```sh
-python main.py
+```bash
+python app/main.py
 ```
 
-Ensure RabbitMQ server is running and accessible via the URL specified in your `.env` file.
+Ensure RabbitMQ, MongoDB, and PostgreSQL servers are running and accessible.
 
-## Running Tests
+---
 
-To run the test suite, use the following command:
+## Testing
 
-```sh
+Run the test suite using:
+
+```bash
 pytest
 ```
 
-The tests are located in the `tests` directory and are written using the `pytest` framework.
+### Test Coverage
+
+- **Resume Operations**:
+  - Validates resume handling logic (`app/tests/test_resume_ops.py`).
+
+---
 
 ## Folder Structure
 
-- `app/`: Contains the main application code.
-    - `main.py`: Entry point of the application.
-    - `config.py`: Application configuration.
-- `tests/`: Contains unit and integration tests.
+```plaintext
+application_manager_service/
+│
+├── app/
+│   ├── core/               # Core configurations and utilities
+│   ├── models/             # Data models for jobs and users
+│   ├── routers/            # API endpoint routers
+│   ├── scripts/            # Database initialization scripts
+│   ├── services/           # Business logic and messaging handlers
+│   ├── tests/              # Unit and integration tests
+│   └── main.py             # Entry point of the application
+│
+├── requirements.txt        # Python dependencies
+├── Dockerfile              # Docker setup
+├── README.md               # Documentation
+└── .env.example            # Example environment variables file
+```
+
+---
+
+## API Endpoints
+
+The API provides the following endpoints:
+
+- **User Operations**:
+   - `GET /users`: Fetch all users.
+   - `POST /users`: Create a new user.
+- **Job Operations**:
+   - `GET /jobs`: Fetch all jobs.
+   - `POST /jobs`: Create a new job.
+- **Resume Operations**:
+   - `POST /resumes`: Process and store a resume.
+
+Refer to `routers/app_router.py` for additional details on API endpoints.
+
+---
 
 ## Contributing
 
 1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`)
-3. Make your changes.
-4. Commit your changes (`git commit -am 'Add new feature'`)
-5. Push to the branch (`git push origin feature-branch`)
-6. Create a new Pull Request.
+2. Create a feature branch:
+
+    ```bash
+    git checkout -b feature-branch
+    ```
+
+3. Commit your changes:
+
+    ```bash
+    git commit -am 'Add new feature'
+    ```
+
+4. Push your branch:
+
+    ```bash
+    git push origin feature-branch
+    ```
+
+5. Create a Pull Request.
+
+---
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
+
+---
