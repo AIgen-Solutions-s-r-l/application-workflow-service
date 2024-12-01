@@ -1,5 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, patch
+from app.core.exceptions import ResumeNotFoundError
 from app.services.resume_ops import get_resume_by_user_id, save_application_with_resume
 import json
 
@@ -43,23 +44,14 @@ async def add_resume_from_file(json_file_path: str):
         print(f"An error occurred while adding the resume: {e}")
         return None
 
-# Test for get_resume_by_user_id function
 @pytest.mark.asyncio
 async def test_get_resume_by_user_id():
-    user_id = "1"
+    user_id = "4"
     resume_data = {"user_id": user_id, "resume": {"experience": "3 years"}}
     
     with patch("app.services.resume_ops.resumes_collection.find_one", AsyncMock(return_value=resume_data)):
         resume = await get_resume_by_user_id(user_id)
-        assert resume == resume_data["resume"]
-
-@pytest.mark.asyncio
-async def test_get_resume_by_user_id_not_found():
-    user_id = "999"
-    
-    with patch("app.services.resume_ops.resumes_collection.find_one", AsyncMock(return_value=None)):
-        resume = await get_resume_by_user_id(user_id)
-        assert resume is None
+        assert resume == resume_data  # Adjusted to match the full document
 
 # Test for save_application_with_resume function
 @pytest.mark.asyncio
@@ -93,3 +85,18 @@ async def test_add_resume_from_file(tmp_path):
     with patch("app.core.mongo.resumes_collection.insert_one", AsyncMock(return_value=mock_insert_result)):
         application_id = await add_resume_from_file(str(json_file))
         assert application_id == "mock_id"
+
+@pytest.mark.asyncio
+async def test_get_resume_by_user_id_not_found():
+    user_id = "999"  # Nonexistent user ID
+
+    with patch("app.services.resume_ops.resumes_collection.find_one", AsyncMock(return_value=None)):
+        with pytest.raises(ResumeNotFoundError) as excinfo:
+            await get_resume_by_user_id(user_id)
+
+        # Validate the full exception dictionary
+        expected_error = {
+            "error": "ResumeNotFoundError",
+            "message": f"Resume not found for user_id: {user_id}",
+        }
+        assert str(excinfo.value) == f"404: {expected_error}"
