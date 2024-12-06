@@ -167,6 +167,29 @@ The API provides the following endpoints:
 
 Refer to `routers/app_router.py` for additional details on API endpoints.
 
+Curl example:
+```
+curl -X POST "http://localhost:8006/applications" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzNTA2NjAwfQ.MBd6MrGLrys168vDBaujWUlGeNUbtkwhOyd7OAE6dak" \
+-H "Content-Type: application/json" \
+-d '{
+    "user_id": "4",
+    "jobs": [
+        {
+            "description": "aaaaaa",
+            "portal": "bbbbbb",
+            "title": "ccccccc"
+        },
+        {
+            "description": "aa3",
+            "portal": "bb3",
+            "title": "c3"
+        }
+    ]
+}'
+```
+
+
 ---
 
 ## Contributing
