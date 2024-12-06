@@ -148,8 +148,12 @@ async def submit_jobs_and_save_application(request: JobApplicationRequest):
         if not resume:
             raise ResumeNotFoundError(user_id)
 
+        # Convert JobItem objects to dictionaries
+        jobs_to_apply_dicts = [job.model_dump() for job in jobs_to_apply]
+        jobs_wrapped = {"jobs": jobs_to_apply_dicts}
+
         # Save the application with resume and jobs_to_apply list
-        application_id = await save_application_with_resume(user_id, resume, jobs_to_apply)
+        application_id = await save_application_with_resume(user_id, resume, jobs_wrapped)
 
         # Ensure application_id is JSON serializable
         return {"application_id": str(application_id)}
