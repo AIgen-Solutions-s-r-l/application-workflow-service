@@ -1,7 +1,6 @@
-
 # Application Manager Service
 
-The **Application Manager Service** is a Python-based backend service designed to manage application workflows and handle user resumes and job tracking. It integrates with RabbitMQ for asynchronous message processing and MongoDB/PostgreSQL for data storage.
+The **Application Manager Service** is a Python-based backend service designed to manage application workflows, handle user resumes, and track job applications. It interacts with MongoDB for data storage and uses FastAPI for API-based interactions.
 
 ## Table of Contents
 
@@ -31,9 +30,7 @@ The Application Manager Service provides key functionalities such as:
 ## Requirements
 
 - Python 3.12.3
-- RabbitMQ server
 - MongoDB server
-- PostgreSQL server
 - Virtualenv
 
 ---
@@ -82,35 +79,33 @@ The Application Manager Service provides key functionalities such as:
 Create a `.env` file in the project root directory with the following configuration:
 
 ```env
-RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 SERVICE_NAME=application_manager_service
 MONGO_URI=mongodb://localhost:27017/
-POSTGRES_URI=postgresql://user:password@localhost:5432/database
 ```
 
 ### Database Setup
 
-Run the database initialization scripts to set up MongoDB and PostgreSQL:
+Run the database initialization scripts to set up MongoDB:
 
-- Use `init_db.py` for seeding MongoDB.
-- Ensure PostgreSQL is configured with the provided URI.
+```bash
+python run_init_db.py
+```
 
 ---
 
 ## Application Workflow
 
-1. **RabbitMQ Messaging**:
-   - Publishes messages to RabbitMQ queues for asynchronous processing.
+1. **HTTP API Requests**:
+   - Accepts POST requests at `/applications` to handle application data.
 
 2. **Database Management**:
-   - Stores user and job data in MongoDB.
-   - Utilizes PostgreSQL for relational data management.
+   - Stores user resumes and job application data in MongoDB.
 
 3. **Resume Processing**:
-   - Processes and validates resumes using the logic in `resume_ops.py`.
+   - Retrieves resumes based on user IDs for application tracking.
 
-4. **API Interaction**:
-   - Provides endpoints for managing resumes, jobs, and user data.
+4. **Application Submission**:
+   - Submits and stores job application details using the provided API endpoint.
 
 ---
 
@@ -122,7 +117,7 @@ Run the application using the following command:
 python app/main.py
 ```
 
-Ensure RabbitMQ, MongoDB, and PostgreSQL servers are running and accessible.
+Ensure MongoDB is running and accessible.
 
 ---
 
@@ -151,7 +146,7 @@ application_manager_service/
 │   ├── models/             # Data models for jobs and users
 │   ├── routers/            # API endpoint routers
 │   ├── scripts/            # Database initialization scripts
-│   ├── services/           # Business logic and messaging handlers
+│   ├── services/           # Business logic
 │   ├── tests/              # Unit and integration tests
 │   └── main.py             # Entry point of the application
 │
@@ -167,14 +162,8 @@ application_manager_service/
 
 The API provides the following endpoints:
 
-- **User Operations**:
-   - `GET /users`: Fetch all users.
-   - `POST /users`: Create a new user.
-- **Job Operations**:
-   - `GET /jobs`: Fetch all jobs.
-   - `POST /jobs`: Create a new job.
-- **Resume Operations**:
-   - `POST /resumes`: Process and store a resume.
+- **Job Applications**:
+   - `POST /applications`: Submits a list of jobs to apply for and saves the application data in MongoDB.
 
 Refer to `routers/app_router.py` for additional details on API endpoints.
 
@@ -208,5 +197,3 @@ Refer to `routers/app_router.py` for additional details on API endpoints.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
-
----
