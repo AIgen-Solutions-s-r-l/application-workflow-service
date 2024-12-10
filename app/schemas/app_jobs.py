@@ -12,7 +12,6 @@ class JobApplicationRequest(BaseModel):
     """
     Request model for receiving the job application data.
     """
-    user_id: str = Field(..., description="The ID of the user submitting the application.")
     jobs: list[JobItem] = Field(
         ..., description="List of jobs to apply to, each represented as a JobItem."
     )
