@@ -19,7 +19,7 @@ async def get_resume_by_user_id(user_id: int):
         raise ResumeNotFoundError(user_id)
     return resume
 
-async def save_application_with_resume(user_id: str, resume: dict, job_list_to_apply: list):
+async def save_application_with_resume(user_id: str, resume: dict, job_list_to_apply: list, is_batch: bool):
     """
     Save the application data with resume in the applications collection.
 
@@ -37,7 +37,8 @@ async def save_application_with_resume(user_id: str, resume: dict, job_list_to_a
     application_data = {
         "user_id": user_id,
         "resume": resume,
-        "jobs": job_list_to_apply  # Matching `jobs` field for the applier service
+        "jobs": job_list_to_apply,  # Matching `jobs` field for the applier service
+        "is_batch": is_batch
     }
     try:
         result = await applications_collection.insert_one(application_data)

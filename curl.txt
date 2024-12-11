@@ -1,10 +1,10 @@
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
 curl -X POST "http://localhost:8006/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzODM4MzQ3fQ.PYgPU3VN_u_8Z48kp7yJUpqrjCTSyYS4G2S7qFRIDcs" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzOTUyNDEwfQ.aEemhz4tB6zTCZLUp2VQ-KE5q4Fx5XsfpnFDrB3mE1w" \
 -H "Content-Type: application/json" \
 -d '{
-    "user_id": "4",
+    "is_batch" : 1,
     "jobs": [
         {
             "description": "aaaaaa",
@@ -20,5 +20,5 @@ curl -X POST "http://localhost:8006/applications" \
 }'
 
 curl -X GET "http://localhost:8006/applied" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzOTI0MDU4fQ.jRT3otsi7CnrLcCUvlHL9rqAY5tDpklGbXau0yA-KUA" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzOTI4MTY1fQ.FqfcevLpZVmbofTZqEA66dku9vsgjdjjAR-giDtxomU" \
 -H "Content-Type: application/json"
