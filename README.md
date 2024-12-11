@@ -173,7 +173,7 @@ curl -X POST "http://localhost:8006/applications" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzNTA2NjAwfQ.MBd6MrGLrys168vDBaujWUlGeNUbtkwhOyd7OAE6dak" \
 -H "Content-Type: application/json" \
 -d '{
-    "user_id": "4",
+    "is_batch": 1,
     "jobs": [
         {
             "description": "aaaaaa",
