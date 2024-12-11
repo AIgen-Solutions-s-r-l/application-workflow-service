@@ -8,7 +8,7 @@ from app.core.config import Settings
 from app.core.database import get_db
 from app.core.exceptions import ResumeNotFoundError
 from app.models.job import Job, SuccApp
-from app.schemas.app_jobs import JobApplicationRequest
+from app.schemas.app_jobs import JobApplicationRequest, JobResponse
 from app.services.resume_ops import get_resume_by_user_id, save_application_with_resume
 
 import logging
@@ -98,7 +98,7 @@ async def submit_jobs_and_save_application(
     "/applied",
     summary="Get jobs associated with the authenticated user",
     description="Fetch all jobs associated with the user_id in the JWT",
-    response_model=List[Job],
+    response_model=List[JobResponse],
 )
 async def get_user_jobs(
     current_user=Depends(get_current_user),
