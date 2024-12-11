@@ -44,3 +44,12 @@ class Job(Base):
         return (f"Job(id={self.job_id}, title='{self.title}', remote={self.is_remote}, "
                 f"workplace_type='{self.workplace_type}', posted_date={self.posted_date}, "
                 f"state='{self.job_state}', company_id={self.company_id}, location_id={self.location_id})")
+    
+    succ_apps = relationship('SuccApp', back_populates='job')
+
+class SuccApp(Base):
+    __tablename__ = 'succ_app'
+    user_id = Column(Integer, primary_key=True)
+    job_id = Column(Integer, ForeignKey('Jobs.job_id'), primary_key=True)
+
+    job = relationship('Job', back_populates='succ_apps')
