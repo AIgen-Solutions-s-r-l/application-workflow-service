@@ -188,6 +188,28 @@ curl -X POST "http://localhost:8006/applications" \
     ]
 }'
 ```
+- **User Applications**:
+   - `GET /applied`: Retrieves all jobs associated with the authenticated user.
+
+Refer to `routers/app_router.py` for additional details on API endpoints.
+
+Curl example:
+
+```bash
+curl -X GET "http://localhost:8006/applied" \
+-H "Authorization: Bearer <your_jwt_token>" \
+-H "Content-Type: application/json"
+```
+
+This endpoint retrieves all jobs associated with the authenticated user. You only need to pass a valid token in the request header—no additional data is required.
+
+- **Request**: 
+   - Method: `GET`
+   - Headers:
+     - `Authorization: Bearer <your_jwt_token>`
+
+- **Response**: 
+   - A list of jobs in the `JobResponse` model format. The `JobResponse` model is defined in `/models` and provides the structure for each job returned by the endpoint.
 
 
 ---
