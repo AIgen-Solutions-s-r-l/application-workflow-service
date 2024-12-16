@@ -25,7 +25,6 @@ logger = logging.getLogger(__name__)
     summary="Submit Jobs and Save Application",
     description=(
         "Receives a list of jobs to apply to along with user authentication via JWT,"
-        "and a boolean flag indicating whether the application is a batch application. "
         "retrieves the user's resume, and saves the application data in MongoDB."
     ),
     response_description="Application ID",
@@ -58,7 +57,6 @@ async def submit_jobs_and_save_application(
     Args:
         request (JobApplicationRequest): The request payload containing `jobs`.
         current_user: The authenticated user's ID obtained via JWT.
-        is_batch (bool): A flag indicating whether the application is a batch application.
 
     Returns:
         dict: A dictionary containing the `application_id` of the saved application.
@@ -69,7 +67,6 @@ async def submit_jobs_and_save_application(
     """
     user_id = current_user  # Assuming `get_current_user` directly returns the user_id
     jobs_to_apply = request.jobs
-    is_batch = request.is_batch
 
     try:
         # Retrieve the resume
@@ -82,7 +79,7 @@ async def submit_jobs_and_save_application(
         jobs_wrapped = {"jobs": jobs_to_apply_dicts}
 
         # Save the application with resume and jobs_to_apply list
-        application_id = await save_application_with_resume(user_id, resume, jobs_wrapped, is_batch)
+        application_id = await save_application_with_resume(user_id, resume, jobs_wrapped)
 
         # Ensure application_id is JSON serializable
         return {"application_id": str(application_id)}

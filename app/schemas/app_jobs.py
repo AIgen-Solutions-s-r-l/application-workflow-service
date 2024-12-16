@@ -14,9 +14,6 @@ class JobApplicationRequest(BaseModel):
     """
     Request model for receiving the job application data.
     """
-    is_batch: bool = Field(
-        ..., description="Flag indicating whether the application is a batch application."
-    )
     jobs: list[JobItem] = Field(
         ..., description="List of jobs to apply to, each represented as a JobItem."
     )

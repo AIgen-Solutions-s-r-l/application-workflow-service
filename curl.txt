@@ -4,7 +4,6 @@ curl -X POST "http://localhost:8006/applications" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzOTUyNDEwfQ.aEemhz4tB6zTCZLUp2VQ-KE5q4Fx5XsfpnFDrB3mE1w" \
 -H "Content-Type: application/json" \
 -d '{
-    "is_batch" : 1,
     "jobs": [
         {
             "description": "aaaaaa",
