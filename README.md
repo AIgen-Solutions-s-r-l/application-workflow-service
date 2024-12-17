@@ -187,6 +187,10 @@ curl -X POST "http://localhost:8006/applications" \
     ]
 }'
 ```
+
+![Matching 2](https://github.com/user-attachments/assets/deffe9c5-be3d-403e-857e-3bab02429e48)
+
+
 - **User Applications**:
    - `GET /applied`: Retrieves all jobs associated with the authenticated user.
 
@@ -209,6 +213,8 @@ This endpoint retrieves all jobs associated with the authenticated user. You onl
 
 - **Response**: 
    - A list of jobs in the `JobResponse` model format. The `JobResponse` model is defined in `/models` and provides the structure for each job returned by the endpoint.
+
+![SeeApp 5](https://github.com/user-attachments/assets/556bd166-2a75-4aae-b3c0-3da0ded10aa9)
 
 
 ---
