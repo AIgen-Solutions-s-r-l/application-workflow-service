@@ -1,16 +1,18 @@
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
-curl -X POST "http://localhost:8006/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzOTUyNDEwfQ.aEemhz4tB6zTCZLUp2VQ-KE5q4Fx5XsfpnFDrB3mE1w" \
+curl -X POST "http://localhost:8007/applications" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM0NTM5MDk4fQ.cLSaZkAXQ4vZIK4Wwt1MiYndJ3RSs1p3g81mrHjgy-A" \
 -H "Content-Type: application/json" \
 -d '{
     "jobs": [
         {
+            "job_id": 1111,
             "description": "aaaaaa",
             "portal": "bbbbbb",
             "title": "ccccccc"
         },
         {
+            "job_id": 1112,
             "description": "aa3",
             "portal": "bb3",
             "title": "c3"
