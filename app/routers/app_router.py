@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.exceptions import ResumeNotFoundError
 from app.models.job import Job, SuccApp
 from app.schemas.app_jobs import JobApplicationRequest, JobResponse
-from app.services.resume_ops import get_resume_by_user_id, save_application_with_resume
+from app.services.resume_ops import upsert_application_jobs
 
 import logging
 
@@ -22,15 +22,15 @@ logger = logging.getLogger(__name__)
     
 @router.post(
     "/applications",
-    summary="Submit Jobs and Save Application",
+    summary="Submit Jobs and Save/Upsert Application",
     description=(
-        "Receives a list of jobs to apply to along with user authentication via JWT,"
-        "retrieves the user's resume, and saves the application data in MongoDB."
+        "Receives a list of jobs to apply to along with user authentication via JWT, "
+        "and upserts the application data in MongoDB by adding new jobs to the user's existing application."
     ),
     response_description="Application ID",
     responses={
         200: {
-            "description": "Application successfully saved.",
+            "description": "Application successfully upserted.",
             "content": {
                 "application/json": {
                     "example": {
@@ -38,9 +38,6 @@ logger = logging.getLogger(__name__)
                     }
                 }
             }
-        },
-        404: {
-            "description": "Resume not found for the authenticated user."
         },
         500: {
             "description": "Internal Server Error. Failed to save application."
@@ -51,48 +48,38 @@ async def submit_jobs_and_save_application(
     request: JobApplicationRequest, current_user=Depends(get_current_user)
 ):
     """
-    Receives a list of jobs to apply from the frontend, retrieves the authenticated user's resume, 
-    and saves the application data in MongoDB.
+    Receives a list of jobs to apply from the frontend and upserts the application data in MongoDB
+    by adding the new jobs to the user's existing application document or creating a new one if it doesn't exist.
 
     Args:
         request (JobApplicationRequest): The request payload containing `jobs`.
         current_user: The authenticated user's ID obtained via JWT.
 
     Returns:
-        dict: A dictionary containing the `application_id` of the saved application.
+        dict: A dictionary containing the `application_id` of the saved/upserted application.
 
     Raises:
-        ResumeNotFoundError: If the resume is not found.
         HTTPException: For database operation failures.
     """
     user_id = current_user  # Assuming `get_current_user` directly returns the user_id
     jobs_to_apply = request.jobs
 
     try:
-        # Retrieve the resume
-        resume = await get_resume_by_user_id(user_id)
-        if not resume:
-            raise ResumeNotFoundError(user_id)
-
         # Convert JobItem objects to dictionaries
         jobs_to_apply_dicts = [job.model_dump() for job in jobs_to_apply]
-        jobs_wrapped = {"jobs": jobs_to_apply_dicts}
 
-        # Save the application with resume and jobs_to_apply list
-        application_id = await save_application_with_resume(user_id, resume, jobs_wrapped)
+        # Upsert the application: add new jobs to the existing jobs array or create a new document if none exists
+        application_id = await upsert_application_jobs(user_id, jobs_to_apply_dicts)
 
-        # Ensure application_id is JSON serializable
-        return {"application_id": str(application_id)}
+        return {"application_id": str(application_id) if application_id else "Updated applications"}
 
-    except ResumeNotFoundError as e:
-        logger.warning(str(e))
-        raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         logger.error(
             f"Failed to save application for user_id {user_id}: {str(e)}",
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Failed to save application.")
+
     
 @router.get(
     "/applied",

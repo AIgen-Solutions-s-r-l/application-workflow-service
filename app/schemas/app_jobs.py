@@ -6,6 +6,7 @@ class JobItem(BaseModel):
     """
     Model for individual job details.
     """
+    job_id: int = Field(..., description="The ID of the job.")
     description: str = Field(..., description="Description of the job.")
     portal: str = Field(..., description="The portal where the job was found.")
     title: str = Field(..., description="The title of the job.")
