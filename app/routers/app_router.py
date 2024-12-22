@@ -2,24 +2,23 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.auth import get_current_user
 from app.core.config import Settings
 from app.core.database import get_db
-from app.core.exceptions import ResumeNotFoundError
-from app.models.job import Job, SuccApp
+from app.models.job import Job, SuccApp, JobData
 from app.schemas.app_jobs import JobApplicationRequest, JobResponse
 from app.services.resume_ops import upsert_application_jobs
-
 import logging
+from pydantic import ValidationError
+from motor.motor_asyncio import AsyncIOMotorClient
+from app.core.config import Settings
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = Settings()
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-    
+mongo_client = AsyncIOMotorClient(settings.mongodb)
+
 @router.post(
     "/applications",
     summary="Submit Jobs and Save/Upsert Application",
@@ -79,6 +78,14 @@ async def submit_jobs_and_save_application(
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Failed to save application.")
+    
+# -------------------------
+
+#TODO:
+# To decide: we now both have /applied (for retrieving only info about applied jobs) and the other two (for retrieving all info about applications)
+# IMPORTANT: for now skyvern's not taking pushing stuff into SuccApp yet! 
+
+# -------------------------
 
     
 @router.get(
@@ -125,3 +132,105 @@ async def get_user_jobs(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch jobs: {str(e)}")
+    
+
+@router.get(
+    "/successful_applications",
+    summary="Get successful applications for the authenticated user",
+    description="Fetch all successful job applications (from 'success_app' collection) for the user_id in the JWT.",
+    response_model=List[JobData]
+)
+async def get_successful_applications(
+    current_user = Depends(get_current_user),
+):
+    """
+    Fetch all job applications that were applied successfully (moved into 'success_app').
+    
+    Args:
+        current_user: The authenticated user's ID obtained from the JWT.
+
+    Returns:
+        List[JobData]: A list of successfully applied jobs.
+
+    Raises:
+        HTTPException(404): If no successful apps are found.
+        HTTPException(500): If a server/database error occurs.
+    """
+    user_id = current_user  # Assuming `get_current_user` returns just the user_id
+
+    try:
+        db = mongo_client.get_database("resumes")
+        success_collection = db.get_collection("success_app")
+
+        doc = await success_collection.find_one({"user_id": user_id})
+        if not doc or "content" not in doc or not doc["content"]:
+            raise HTTPException(status_code=404, detail="No successful applications found for this user.")
+
+        # Parse the content into a list of JobData objects
+        apps_list = []
+        for app_id, raw_job_data in doc["content"].items():
+            try:
+                job_data = JobData(**raw_job_data)
+                apps_list.append(job_data)
+            except ValidationError as e:
+                logger.error(f"Validation error for app_id {app_id}: {str(e)}")
+
+        if not apps_list:
+            raise HTTPException(status_code=404, detail="No valid successful applications found for this user.")
+
+        return apps_list
+
+    except Exception as e:
+        logger.error(f"Failed to fetch successful apps for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch successful apps: {str(e)}")
+
+
+@router.get(
+    "/failed_applications",
+    summary="Get failed applications for the authenticated user",
+    description="Fetch all failed job applications (from 'failed_app' collection) for the user_id in the JWT.",
+    response_model=List[JobData],
+)
+async def get_failed_applications(
+    current_user = Depends(get_current_user),
+):
+    """
+    Fetch all job applications that failed to apply (moved into 'failed_app').
+    
+    Args:
+        current_user: The authenticated user's ID obtained from the JWT.
+
+    Returns:
+        List[JobData]: A list of failed job applications.
+
+    Raises:
+        HTTPException(404): If no failed apps are found.
+        HTTPException(500): If a server/database error occurs.
+    """
+    user_id = current_user
+
+    try:
+        db = mongo_client.get_database("resumes")
+        failed_collection = db.get_collection("failed_app")
+
+        doc = await failed_collection.find_one({"user_id": user_id})
+        if not doc or "content" not in doc or not doc["content"]:
+            raise HTTPException(status_code=404, detail="No failed applications found for this user.")
+
+        # Parse the content into a list of JobData objects
+        apps_list = []
+        for app_id, raw_job_data in doc["content"].items():
+            try:
+                job_data = JobData(**raw_job_data)
+                apps_list.append(job_data)
+            except ValidationError as e:
+                logger.error(f"Validation error for app_id {app_id}: {str(e)}")
+
+        if not apps_list:
+            raise HTTPException(status_code=404, detail="No valid failed applications found for this user.")
+
+        return apps_list
+
+    except Exception as e:
+        logger.error(f"Failed to fetch failed apps for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch failed apps: {str(e)}")

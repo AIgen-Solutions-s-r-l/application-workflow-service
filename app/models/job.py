@@ -1,4 +1,5 @@
 # app/models/job.py
+from typing import Optional
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 from app.core.base import Base  # Import Base from core
@@ -53,3 +54,12 @@ class SuccApp(Base):
     job_id = Column(Integer, ForeignKey('Jobs.job_id'), primary_key=True)
 
     job = relationship('Job', back_populates='succ_apps')
+
+#TODO: to tweak!
+class JobData(Base):
+    resume_optimized: Optional[str] = None
+    cover_letter: Optional[str] = None
+    job_id: Optional[int] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    portal: Optional[str] = None
