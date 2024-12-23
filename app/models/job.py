@@ -56,10 +56,11 @@ class SuccApp(Base):
     job = relationship('Job', back_populates='succ_apps')
 
 #TODO: to tweak!
+'''
 class JobData(Base):
     resume_optimized: Optional[str] = None
     cover_letter: Optional[str] = None
     job_id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
-    portal: Optional[str] = None
+    portal: Optional[str] = None'''

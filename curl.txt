@@ -7,16 +7,10 @@ curl -X POST "http://localhost:8007/applications" \
     "jobs": [
         {
             "job_id": 1111,
-            "description": "aaaaaa",
-            "portal": "bbbbbb",
-            "title": "ccccccc"
+            "description": "We are looking for an experienced FP&A manager with exceptional data analytical skills and a strong desire to grow within a fast-expanding global organization. This hands-on role will report to the Head of Finance and be part of our international finance team, contributing to financial performance and operational excellence.",
+            "portal": "example",
+            "title": "FP&A manager"
         },
-        {
-            "job_id": 1112,
-            "description": "aa3",
-            "portal": "bb3",
-            "title": "c3"
-        }
     ]
 }'
 
