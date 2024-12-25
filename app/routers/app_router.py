@@ -4,8 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import get_current_user
 from app.core.config import Settings
-from app.core.database import get_db
-from app.models.job import Job, SuccApp
+from app.models.job import Job
 from app.schemas.app_jobs import JobApplicationRequest, JobResponse
 from app.services.resume_ops import upsert_application_jobs
 import logging
@@ -78,65 +77,10 @@ async def submit_jobs_and_save_application(
             exc_info=True,
         )
         raise HTTPException(status_code=500, detail="Failed to save application.")
-    
-# -------------------------
-
-#TODO:
-# To decide: we now both have /applied (for retrieving only info about applied jobs) and the other two (for retrieving all info about applications)
-# IMPORTANT: for now skyvern's not taking pushing stuff into SuccApp yet! 
-
-# -------------------------
-
-    
-@router.get(
-    "/applied",
-    summary="Get jobs associated with the authenticated user",
-    description="Fetch all jobs associated with the user_id in the JWT",
-    response_model=List[JobResponse],
-)
-async def get_user_jobs(
-    current_user=Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Fetch all jobs associated with the authenticated user.
-
-    Args:
-        current_user: The authenticated user's ID obtained from the JWT.
-        db: Database session.
-
-    Returns:
-        List[Job]: A list of jobs associated with the user.
-
-    Raises:
-        HTTPException: If no jobs are found or a database error occurs.
-    """
-    user_id = current_user  # Assuming `get_current_user` directly returns the user_id
-
-    try:
-        # Query to fetch job details for the user
-        logger.info(f"Fetching jobs for user_id: {user_id}")
-
-        stmt = (
-            select(Job)
-            .join(SuccApp, Job.job_id == SuccApp.job_id)
-            .where(SuccApp.user_id == user_id)
-        )
-        result = await db.execute(stmt)
-        jobs = result.scalars().all()
-
-        if not jobs:
-            raise HTTPException(status_code=404, detail="No jobs found for the user.")
-
-        return jobs
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch jobs: {str(e)}")
-    
 
 '''
 @router.get(
-    "/successful_applications",
+    "/applied",
     summary="Get successful applications for the authenticated user",
     description="Fetch all successful job applications (from 'success_app' collection) for the user_id in the JWT.",
     response_model=List[JobData]
@@ -187,7 +131,7 @@ async def get_successful_applications(
 
 
 @router.get(
-    "/failed_applications",
+    "/fail_applied",
     summary="Get failed applications for the authenticated user",
     description="Fetch all failed job applications (from 'failed_app' collection) for the user_id in the JWT.",
     response_model=List[JobData],

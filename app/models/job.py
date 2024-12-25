@@ -48,13 +48,6 @@ class Job(Base):
     
     succ_apps = relationship('SuccApp', back_populates='job')
 
-class SuccApp(Base):
-    __tablename__ = 'succ_app'
-    user_id = Column(Integer, primary_key=True)
-    job_id = Column(Integer, ForeignKey('Jobs.job_id'), primary_key=True)
-
-    job = relationship('Job', back_populates='succ_apps')
-
 #TODO: to tweak!
 '''
 class JobData(Base):
