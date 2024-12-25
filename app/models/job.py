@@ -45,15 +45,3 @@ class Job(Base):
         return (f"Job(id={self.job_id}, title='{self.title}', remote={self.is_remote}, "
                 f"workplace_type='{self.workplace_type}', posted_date={self.posted_date}, "
                 f"state='{self.job_state}', company_id={self.company_id}, location_id={self.location_id})")
-    
-    succ_apps = relationship('SuccApp', back_populates='job')
-
-#TODO: to tweak!
-'''
-class JobData(Base):
-    resume_optimized: Optional[str] = None
-    cover_letter: Optional[str] = None
-    job_id: Optional[int] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    portal: Optional[str] = None'''

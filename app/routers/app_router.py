@@ -4,8 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import get_current_user
 from app.core.config import Settings
-from app.models.job import Job
-from app.schemas.app_jobs import JobApplicationRequest, JobResponse
+from app.schemas.app_jobs import JobApplicationRequest, JobData
 from app.services.resume_ops import upsert_application_jobs
 import logging
 from pydantic import ValidationError
@@ -78,7 +77,6 @@ async def submit_jobs_and_save_application(
         )
         raise HTTPException(status_code=500, detail="Failed to save application.")
 
-'''
 @router.get(
     "/applied",
     summary="Get successful applications for the authenticated user",
@@ -179,4 +177,3 @@ async def get_failed_applications(
     except Exception as e:
         logger.error(f"Failed to fetch failed apps for user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch failed apps: {str(e)}")
-'''

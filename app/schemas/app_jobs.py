@@ -19,7 +19,8 @@ class JobApplicationRequest(BaseModel):
         ..., description="List of jobs to apply to, each represented as a JobItem."
     )
 
-class JobResponse(BaseModel):
+# Useful when we'll have all the fields!
+'''class JobResponse(BaseModel):
     job_id: int
     title: str
     is_remote: Optional[bool]
@@ -32,4 +33,13 @@ class JobResponse(BaseModel):
     location_id: int
 
     class Config:
-        from_attributes = True
+        from_attributes = True'''
+
+#TODO: to tweak!
+class JobData(BaseModel):
+    resume_optimized: Optional[str] = None
+    cover_letter: Optional[str] = None
+    job_id: Optional[int] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    portal: Optional[str] = None
