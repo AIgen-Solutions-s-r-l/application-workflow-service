@@ -35,11 +35,13 @@ class JobApplicationRequest(BaseModel):
     class Config:
         from_attributes = True'''
 
-#TODO: to tweak!
+# TODO: add other fields!
 class JobData(BaseModel):
-    resume_optimized: Optional[str] = None
-    cover_letter: Optional[str] = None
     job_id: Optional[int] = None
     title: Optional[str] = None
     description: Optional[str] = None
     portal: Optional[str] = None
+
+class DetailedJobData(BaseModel):
+    resume_optimized: Optional[str] = None
+    cover_letter: Optional[str] = None

@@ -1,5 +1,5 @@
-from app.core.mongo import resumes_collection, applications_collection
-from app.core.exceptions import ResumeNotFoundError, DatabaseOperationError
+from app.core.mongo import applications_collection
+from app.core.exceptions import DatabaseOperationError
 
 async def upsert_application_jobs(user_id: str, job_list_to_apply: list):
     """
