@@ -191,10 +191,21 @@ curl -X POST "http://localhost:8006/applications" \
 ![Matching 2](https://github.com/user-attachments/assets/deffe9c5-be3d-403e-857e-3bab02429e48)
 
 
-- **User Applications**:
-   - `GET /applied`: Retrieves all jobs associated with the authenticated user.
+Here’s an updated version of the README section to include the new `/fail_applied` route and reflect the current version of `/applied`:
+
+---
+
+### User Applications
+
+- **Get Successful Applications**:
+   - `GET /applied`: Retrieves all jobs that the authenticated user successfully applied to.
+
+- **Get Failed Applications**:
+   - `GET /fail_applied`: Retrieves all jobs that the authenticated user failed to apply to.
 
 Refer to `routers/app_router.py` for additional details on API endpoints.
+
+#### Successful Applications (`/applied`)
 
 Curl example:
 
@@ -204,7 +215,7 @@ curl -X GET "http://localhost:8006/applied" \
 -H "Content-Type: application/json"
 ```
 
-This endpoint retrieves all jobs associated with the authenticated user. You only need to pass a valid token in the request header—no additional data is required.
+This endpoint retrieves all jobs that the authenticated user successfully applied to, together with the data used to apply. You only need to pass a valid token in the request header—no additional data is required.
 
 - **Request**: 
    - Method: `GET`
@@ -212,7 +223,31 @@ This endpoint retrieves all jobs associated with the authenticated user. You onl
      - `Authorization: Bearer <your_jwt_token>`
 
 - **Response**: 
-   - A list of jobs in the `JobResponse` model format. The `JobResponse` model is defined in `/models` and provides the structure for each job returned by the endpoint.
+   - A list of jobs in the `JobData` model format. The `JobData` model is defined in `/schemas` and provides the structure for each job returned by the endpoint.
+   - If no successful applications are found, the endpoint returns a `404 Not Found` error with the message: "No successful applications found for this user."
+
+---
+
+#### Failed Applications (`/fail_applied`)
+
+Curl example:
+
+```bash
+curl -X GET "http://localhost:8006/fail_applied" \
+-H "Authorization: Bearer <your_jwt_token>" \
+-H "Content-Type: application/json"
+```
+
+This endpoint retrieves all jobs that the authenticated user failed to apply to, together with the data used to apply. You only need to pass a valid token in the request header—no additional data is required.
+
+- **Request**: 
+   - Method: `GET`
+   - Headers:
+     - `Authorization: Bearer <your_jwt_token>`
+
+- **Response**: 
+   - A list of jobs in the `JobData` model format. The `JobData` model is defined in `/schemas` and provides the structure for each job returned by the endpoint.
+   - If no failed applications are found, the endpoint returns a `404 Not Found` error with the message: "No failed applications found for this user."
 
 ![SeeApp 5](https://github.com/user-attachments/assets/556bd166-2a75-4aae-b3c0-3da0ded10aa9)
 
