@@ -191,63 +191,53 @@ curl -X POST "http://localhost:8006/applications" \
 ![Matching 2](https://github.com/user-attachments/assets/deffe9c5-be3d-403e-857e-3bab02429e48)
 
 
-Here’s an updated version of the README section to include the new `/fail_applied` route and reflect the current version of `/applied`:
+## User Applications
 
----
+Our application provides four main endpoints for retrieving user applications (both successful and failed). All endpoints **require** a valid JWT token in the `Authorization` header.
 
-### User Applications
+1. **Get All Successful Applications**  
+   - **Endpoint**: `GET /applied`  
+   - **Description**: Retrieves **all successful** job applications for the authenticated user, **excluding** `resume_optimized` and `cover_letter`.  
+   - **Curl Example**:
+     ```bash
+     curl -X GET "http://localhost:8006/applied" \
+     -H "Authorization: Bearer <your_jwt_token>" \
+     -H "Content-Type: application/json"
+     ```
+   - **Response**: A list of jobs in the `JobData` model format.
 
-- **Get Successful Applications**:
-   - `GET /applied`: Retrieves all jobs that the authenticated user successfully applied to.
+2. **Get All Failed Applications**  
+   - **Endpoint**: `GET /fail_applied`  
+   - **Description**: Retrieves **all failed** job applications for the authenticated user, **excluding** `resume_optimized` and `cover_letter`.  
+   - **Curl Example**:
+     ```bash
+     curl -X GET "http://localhost:8006/fail_applied" \
+     -H "Authorization: Bearer <your_jwt_token>" \
+     -H "Content-Type: application/json"
+     ```
+   - **Response**: A list of jobs in the `JobData` model format.
 
-- **Get Failed Applications**:
-   - `GET /fail_applied`: Retrieves all jobs that the authenticated user failed to apply to.
+3. **Get Detailed Info on a Specific Successful Application**  
+   - **Endpoint**: `GET /applied/{app_id}`  
+   - **Description**: Retrieves detailed information (**only** `resume_optimized` and `cover_letter`) for a specific successful application.  
+   - **Curl Example**:
+     ```bash
+     curl -X GET "http://localhost:8006/applied/{app_id}" \
+     -H "Authorization: Bearer <your_jwt_token>" \
+     -H "Content-Type: application/json"
+     ```
+   - **Response**: A `DetailedJobData` object containing `resume_optimized` and `cover_letter`.
 
-Refer to `routers/app_router.py` for additional details on API endpoints.
-
-#### Successful Applications (`/applied`)
-
-Curl example:
-
-```bash
-curl -X GET "http://localhost:8006/applied" \
--H "Authorization: Bearer <your_jwt_token>" \
--H "Content-Type: application/json"
-```
-
-This endpoint retrieves all jobs that the authenticated user successfully applied to, together with the data used to apply. You only need to pass a valid token in the request header—no additional data is required.
-
-- **Request**: 
-   - Method: `GET`
-   - Headers:
-     - `Authorization: Bearer <your_jwt_token>`
-
-- **Response**: 
-   - A list of jobs in the `JobData` model format. The `JobData` model is defined in `/schemas` and provides the structure for each job returned by the endpoint.
-   - If no successful applications are found, the endpoint returns a `404 Not Found` error with the message: "No successful applications found for this user."
-
----
-
-#### Failed Applications (`/fail_applied`)
-
-Curl example:
-
-```bash
-curl -X GET "http://localhost:8006/fail_applied" \
--H "Authorization: Bearer <your_jwt_token>" \
--H "Content-Type: application/json"
-```
-
-This endpoint retrieves all jobs that the authenticated user failed to apply to, together with the data used to apply. You only need to pass a valid token in the request header—no additional data is required.
-
-- **Request**: 
-   - Method: `GET`
-   - Headers:
-     - `Authorization: Bearer <your_jwt_token>`
-
-- **Response**: 
-   - A list of jobs in the `JobData` model format. The `JobData` model is defined in `/schemas` and provides the structure for each job returned by the endpoint.
-   - If no failed applications are found, the endpoint returns a `404 Not Found` error with the message: "No failed applications found for this user."
+4. **Get Detailed Info on a Specific Failed Application**  
+   - **Endpoint**: `GET /fail_applied/{app_id}`  
+   - **Description**: Retrieves detailed information (**only** `resume_optimized` and `cover_letter`) for a specific failed application.  
+   - **Curl Example**:
+     ```bash
+     curl -X GET "http://localhost:8006/fail_applied/{app_id}" \
+     -H "Authorization: Bearer <your_jwt_token>" \
+     -H "Content-Type: application/json"
+     ```
+   - **Response**: A `DetailedJobData` object containing `resume_optimized` and `cover_letter`.
 
 ![SeeApp 5](https://github.com/user-attachments/assets/556bd166-2a75-4aae-b3c0-3da0ded10aa9)
 
