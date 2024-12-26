@@ -191,10 +191,6 @@ curl -X POST "http://localhost:8006/applications" \
 ![Matching 2](https://github.com/user-attachments/assets/deffe9c5-be3d-403e-857e-3bab02429e48)
 
 
-Below is an **updated README** section that reflects the current status of the four endpoints:
-
----
-
 ## User Applications
 
 Our application provides four main endpoints for retrieving user applications (both successful and failed). All endpoints **require** a valid JWT token in the `Authorization` header.
