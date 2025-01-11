@@ -1,20 +1,65 @@
-# Start from an official Python image
-FROM python:3.9
+# Build stage
+FROM python:3.11-slim AS builder
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the requirements file
-COPY requirements.txt .
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install any dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install poetry
+RUN pip install poetry
 
-# Copy the current directory contents into the container
-COPY . .
+# Copy poetry files
+COPY pyproject.toml poetry.lock ./
 
-# Set the environment variable for FastAPI
-ENV PYTHONPATH=/app
+# Configure poetry to not create virtual environment (we're in a container)
+RUN poetry config virtualenvs.create false
 
-# Command to run the FastAPI application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "80"]
+# Install dependencies
+RUN poetry install --only main --no-interaction --no-ansi --no-root
+
+# Production stage
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PORT=8004 \
+    PATH="/app/.local/bin:$PATH"
+
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user for security
+RUN adduser --system --group app
+
+# Copy Python packages and entry points from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Copy application code
+COPY ./app ./app
+
+# Change ownership of the application files
+RUN chown -R app:app /app
+
+# Switch to non-root user
+USER app
+
+# Expose port
+EXPOSE $PORT
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl --fail http://0.0.0.0:8004/ || exit 1
+
+# Command to run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8004"]
