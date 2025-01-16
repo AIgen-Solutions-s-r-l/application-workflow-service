@@ -23,6 +23,6 @@ class JobData(JobResponse):
     """
     Model representing comprehensive job details.
     """
-    id: int = Field(..., description="The unique ID of the job record.")
-    job_id: int = Field(..., description="The ID of the job.")
+    id: int = Field(None, description="The unique ID of the job record.")
+    job_id: int = Field(None, description="The ID of the job.")
     portal: Optional[str] = Field(None, description="The portal where the job was found.")
