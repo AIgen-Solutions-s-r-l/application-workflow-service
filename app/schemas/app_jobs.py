@@ -1,13 +1,13 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
-from app.models.job import JobResponse
+from app.models.job import JobData
 
 class JobApplicationRequest(BaseModel):
     """
     Request model for receiving the job application data.
     """
-    jobs: list[JobResponse] = Field(
+    jobs: list[JobData] = Field(
         ..., description="List of jobs to apply to, each represented as a JobItem."
     )
 
