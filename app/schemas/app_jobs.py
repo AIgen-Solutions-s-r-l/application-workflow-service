@@ -1,46 +1,40 @@
-from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from pydantic import BaseModel, Field
 
-class JobItem(BaseModel):
+class JobResponse(BaseModel):
     """
-    Model for individual job details.
+    Model for job details in a response.
     """
+    title: Optional[str] = Field(None, description="The title of the job.")
+    is_remote: Optional[bool] = Field(None, description="Indicates if the job is remote.")
+    workplace_type: Optional[str] = Field(None, description="The workplace type, e.g., onsite, remote, or hybrid.")
+    posted_date: Optional[datetime] = Field(None, description="The date the job was posted.")
+    job_state: Optional[str] = Field(None, description="The state or status of the job.")
+    description: Optional[str] = Field(None, description="A detailed description of the job.")
+    apply_link: Optional[str] = Field(None, description="The link to apply for the job.")
+    company_name: Optional[str] = Field(None, description="The name of the company offering the job.")
+    location: Optional[str] = Field(None, description="The location of the job.")
+
+    class Config:
+        from_attributes = True
+
+class JobData(JobResponse):
+    """
+    Model representing comprehensive job details.
+    """
+    id: int = Field(..., description="The unique ID of the job record.")
     job_id: int = Field(..., description="The ID of the job.")
-    description: str = Field(..., description="Description of the job.")
-    portal: str = Field(..., description="The portal where the job was found.")
-    title: str = Field(..., description="The title of the job.")
+    portal: Optional[str] = Field(None, description="The portal where the job was found.")
+
 
 class JobApplicationRequest(BaseModel):
     """
     Request model for receiving the job application data.
     """
-    jobs: list[JobItem] = Field(
+    jobs: list[JobResponse] = Field(
         ..., description="List of jobs to apply to, each represented as a JobItem."
     )
-
-# Useful when we'll have all the fields!
-'''class JobResponse(BaseModel):
-    job_id: int
-    title: str
-    is_remote: Optional[bool]
-    workplace_type: Optional[str]
-    posted_date: Optional[datetime]
-    job_state: Optional[str]
-    description: Optional[str]
-    apply_link: Optional[str]
-    company_id: int
-    location_id: int
-
-    class Config:
-        from_attributes = True'''
-
-# TODO: add other fields!
-class JobData(BaseModel):
-    job_id: Optional[int] = None
-    title: Optional[str] = None
-    description: Optional[str] = None
-    portal: Optional[str] = None
 
 class DetailedJobData(BaseModel):
     resume_optimized: Optional[str] = None
