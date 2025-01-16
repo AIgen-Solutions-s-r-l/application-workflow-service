@@ -3,7 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from app.core.auth import get_current_user
 from app.core.config import Settings
-from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest, JobData
+from app.models.job import JobResponse
+from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
 from app.services.resume_ops import upsert_application_jobs
 import logging
 from pydantic import ValidationError
@@ -98,13 +99,13 @@ async def fetch_user_doc(
         )
     return doc
 
-# Helper to parse the doc's content into a list of JobData (excluding fields if desired)
+# Helper to parse the doc's content into a list of JobResponse (excluding fields if desired)
 def parse_applications(
     doc: dict, 
     exclude_fields: Optional[List[str]] = None
-) -> List[JobData]:
+) -> List[JobResponse]:
     """
-    Given a doc (with doc['content']), parse each application into `JobData`,
+    Given a doc (with doc['content']), parse each application into `JobResponse`,
     excluding fields in exclude_fields (if provided).
     """
     apps_list = []
@@ -119,7 +120,7 @@ def parse_applications(
             else:
                 filtered_data = raw_job_data
 
-            job_data = JobData(**filtered_data)
+            job_data = JobResponse(**filtered_data)
             apps_list.append(job_data)
         except ValidationError as e:
             logger.error(f"Validation error for app_id {app_id}: {str(e)}")
@@ -134,7 +135,7 @@ def parse_applications(
         "Fetch all successful job applications (from 'success_app' collection) "
         "for the user_id in the JWT, excluding resume and cover letter."
     ),
-    response_model=List[JobData]
+    response_model=List[JobResponse]
 )
 async def get_successful_applications(current_user=Depends(get_current_user)):
     try:
@@ -180,7 +181,7 @@ async def get_successful_application_details(app_id: str, current_user=Depends(g
         "Fetch all failed job applications (from 'failed_app' collection) "
         "for the user_id in the JWT, excluding resume and cover letter."
     ),
-    response_model=List[JobData]
+    response_model=List[JobResponse]
 )
 async def get_failed_applications(current_user=Depends(get_current_user)):
     try:

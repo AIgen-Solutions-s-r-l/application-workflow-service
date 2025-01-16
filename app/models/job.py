@@ -1,47 +1,28 @@
-# app/models/job.py
 from typing import Optional
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text
-from sqlalchemy.orm import relationship
-from app.core.base import Base  # Import Base from core
+from datetime import datetime
+from pydantic import BaseModel, Field
 
-class Company(Base):
-    __tablename__ = 'Companies'
-    company_id = Column(Integer, primary_key=True, autoincrement=True)
-    company_name = Column(String, nullable=False)
+class JobResponse(BaseModel):
+    """
+    Model for job details in a response.
+    """
+    title: Optional[str] = Field(None, description="The title of the job.")
+    is_remote: Optional[bool] = Field(None, description="Indicates if the job is remote.")
+    workplace_type: Optional[str] = Field(None, description="The workplace type, e.g., onsite, remote, or hybrid.")
+    posted_date: Optional[datetime] = Field(None, description="The date the job was posted.")
+    job_state: Optional[str] = Field(None, description="The state or status of the job.")
+    description: Optional[str] = Field(None, description="A detailed description of the job.")
+    apply_link: Optional[str] = Field(None, description="The link to apply for the job.")
+    company_name: Optional[str] = Field(None, description="The name of the company offering the job.")
+    location: Optional[str] = Field(None, description="The location of the job.")
 
-    jobs = relationship('Job', back_populates='company')
+    class Config:
+        from_attributes = True
 
-    def __str__(self):
-        return f"Company(id={self.company_id}, name={self.company_name})"
-
-class Location(Base):
-    __tablename__ = 'Locations'
-    location_id = Column(Integer, primary_key=True, autoincrement=True)
-    location = Column(String, nullable=False)
-
-    jobs = relationship('Job', back_populates='location')
-
-    def __str__(self):
-        return f"Location(id={self.location_id}, location='{self.location}')"
-
-class Job(Base):
-    __tablename__ = 'Jobs'
-    job_id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String, nullable=False)
-    is_remote = Column(Boolean)
-    workplace_type = Column(String)
-    posted_date = Column(DateTime)
-    job_state = Column(String)
-    description = Column(Text)
-    apply_link = Column(String)
-
-    company_id = Column(Integer, ForeignKey('Companies.company_id'), nullable=False)
-    location_id = Column(Integer, ForeignKey('Locations.location_id'), nullable=False)
-
-    company = relationship('Company', back_populates='jobs')
-    location = relationship('Location', back_populates='jobs')
-
-    def __str__(self):
-        return (f"Job(id={self.job_id}, title='{self.title}', remote={self.is_remote}, "
-                f"workplace_type='{self.workplace_type}', posted_date={self.posted_date}, "
-                f"state='{self.job_state}', company_id={self.company_id}, location_id={self.location_id})")
+class JobData(JobResponse):
+    """
+    Model representing comprehensive job details.
+    """
+    id: int = Field(None, description="The unique ID of the job record.")
+    job_id: int = Field(None, description="The ID of the job.")
+    portal: Optional[str] = Field(None, description="The portal where the job was found.")
