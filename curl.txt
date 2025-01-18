@@ -3,16 +3,16 @@ curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: appli
 
 curl -X POST "http://localhost:8009/applications" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb3JlbnpvIiwiaWQiOjgsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM0OTc1NzY3fQ.XXNvMBZSGF2rKcK97gAo_2VapoOF-pAx-WCrkHGsg3I" -H "Content-Type: application/json" -d '{"jobs":[{"job_id":1111,"description":"We are looking for an experienced FP&A manager with exceptional data analytical skills and a strong desire to grow within a fast-expanding global organization. This hands-on role will report to the Head of Finance and be part of our international finance team, contributing to financial performance and operational excellence.","portal":"example","title":"FP&A manager"}]}'
 
-curl -X GET "http://localhost:8004/applied" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM2NjE5NDI1fQ.aMuI_bFUZFl376S8aE_deaawIocCEaGQHehsQN1tOZM" \
+curl -X GET "http://localhost:8010/applied" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3MjEzMzE3fQ.Ohl7nnoLwkrH3AW-TrwpY4CwrBwNQ5Vk9LEkqTQ4xEY" \
 -H "Content-Type: application/json"
 
 curl -X GET "http://localhost:8008/fail_applied" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM1MjM5MzA5fQ.Uw6MXEAkna57DUjUpR1d6u8XA9inyL6mRdm9nTHh264" \
 -H "Content-Type: application/json"
 
-curl -X GET "http://localhost:8008/applied/115eb9e4-fb8c-4229-b986-01d9b0d70a6c" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb3JlbnpvIiwiaWQiOjgsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM1MjM5NjIwfQ.RuWz5P5NnURhZMy0YQJhOiqdE0xN1rl3qa4fOsOEiq8" \
+curl -X GET "http://localhost:8010/applied/115eb9e4-fb8c-4229-b986-01d9b0d70a6c" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3MjEzMzE3fQ.Ohl7nnoLwkrH3AW-TrwpY4CwrBwNQ5Vk9LEkqTQ4xEY" \
 -H "Content-Type: application/json"
 
 curl -X GET "http://localhost:8008/fail_applied/d54339a4-ba43-4e1a-a366-352a6d4fdb57" \

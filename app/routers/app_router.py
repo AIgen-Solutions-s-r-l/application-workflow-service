@@ -1,3 +1,4 @@
+import json
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -166,7 +167,10 @@ async def get_successful_application_details(app_id: str, current_user=Depends(g
         if not raw_job_data:
             raise HTTPException(status_code=404, detail="Application ID not found in successful applications.")
 
-        return DetailedJobData(**raw_job_data)
+        resume_optimized = json.loads(raw_job_data["resume_optimized"]) if raw_job_data.get("resume_optimized") else None
+        cover_letter = json.loads(raw_job_data["cover_letter"]) if raw_job_data.get("cover_letter") else None
+
+        return DetailedJobData(resume_optimized=resume_optimized, cover_letter=cover_letter)
 
     except Exception as e:
         logger.error(f"Failed to fetch detailed info for app_id {app_id} for user {current_user}: {str(e)}")
@@ -212,7 +216,10 @@ async def get_failed_application_details(app_id: str, current_user=Depends(get_c
         if not raw_job_data:
             raise HTTPException(status_code=404, detail="Application ID not found in failed applications.")
 
-        return DetailedJobData(**raw_job_data)
+        resume_optimized = json.loads(raw_job_data["resume_optimized"]) if raw_job_data.get("resume_optimized") else None
+        cover_letter = json.loads(raw_job_data["cover_letter"]) if raw_job_data.get("cover_letter") else None
+
+        return DetailedJobData(resume_optimized=resume_optimized, cover_letter=cover_letter)
 
     except Exception as e:
         logger.error(f"Failed to fetch detailed info for app_id {app_id} for user {current_user}: {str(e)}")
