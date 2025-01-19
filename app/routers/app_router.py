@@ -6,17 +6,20 @@ from app.core.auth import get_current_user
 from app.core.config import Settings
 from app.models.job import JobResponse
 from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
-from app.services.resume_ops import upsert_application_jobs
+from app.services.application_uploader_service import ApplicationUploaderService
 import logging
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import Settings
+from app.services.notification_service import NotificationPublisher
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = Settings()
 
 mongo_client = AsyncIOMotorClient(settings.mongodb)
+
+application_uploader = ApplicationUploaderService()
 
 @router.post(
     "/applications",
@@ -67,7 +70,7 @@ async def submit_jobs_and_save_application(
         jobs_to_apply_dicts = [job.model_dump() for job in jobs_to_apply]
 
         # Upsert the application: add new jobs to the existing jobs array or create a new document if none exists
-        application_id = await upsert_application_jobs(user_id, jobs_to_apply_dicts)
+        application_id = await application_uploader.insert_application_jobs(user_id, jobs_to_apply_dicts)
 
         return {"application_id": str(application_id) if application_id else "Updated applications"}
 
