@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env")
 
+    middleware_queue = "middleware_notification_queue"
     # Authentication settings
     secret_key: str = "your-secret-key-here"
     algorithm: str = "HS256"
