@@ -72,7 +72,7 @@ async def submit_jobs_and_save_application(
         # Upsert the application: add new jobs to the existing jobs array or create a new document if none exists
         application_id = await application_uploader.insert_application_jobs(user_id, jobs_to_apply_dicts)
 
-        return {"application_id": str(application_id) if application_id else "Updated applications"}
+        return {"Success" if application_id else "Updated applications"}
 
     except Exception as e:
         logger.error(

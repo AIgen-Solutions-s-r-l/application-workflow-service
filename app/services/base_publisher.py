@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from app.core.rabbitmq_client import AsyncRabbitMQClient
 from app.core.config import Settings
 
-
 class BasePublisher(ABC):
     def __init__(self, settings: Settings):
         self.settings = settings

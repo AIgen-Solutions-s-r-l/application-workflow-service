@@ -1,12 +1,14 @@
 from app.core.mongo import applications_collection
 from app.core.exceptions import DatabaseOperationError
 from app.services.notification_service import NotificationPublisher
+from app.core.rabbitmq_client import Settings
 
-notification_publisher = NotificationPublisher()
+settings = Settings()
 
+notification_publisher = NotificationPublisher(settings=settings)
 class ApplicationUploaderService:
 
-    async def insert_application_jobs(user_id: str, job_list_to_apply: list):
+    async def insert_application_jobs(self, user_id: str, job_list_to_apply: list):
         """
         Upsert the application data: if a document for the user does not exist, create it.
         If it exists, add the new jobs to the existing jobs array.

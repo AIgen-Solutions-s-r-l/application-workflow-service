@@ -1,8 +1,9 @@
 from typing import Any, Dict
 import logging
-
 from app.services.base_publisher import BasePublisher
-from app.core.config import settings
+from app.core.config import Settings
+
+settings = Settings()
 
 logger = logging.getLogger(__name__)
 

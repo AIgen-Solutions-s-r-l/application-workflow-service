@@ -5,7 +5,9 @@ import aio_pika
 import asyncio
 from loguru import logger
 from typing import Callable, Optional
-from app.core.config import settings
+from app.core.config import Settings
+
+settings = Settings()
 
 class AsyncRabbitMQClient:
     """
