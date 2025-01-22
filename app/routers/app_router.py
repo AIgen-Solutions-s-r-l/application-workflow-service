@@ -51,7 +51,7 @@ async def submit_jobs_and_save_application(
 
     user_id = current_user  # Assuming `get_current_user` returns the user_id
 
-    # 1. Parse and validate the JSON string into the `JobApplicationRequest` model
+    # Parse and validate the JSON string into the `JobApplicationRequest` model
     try:
         job_request = JobApplicationRequest.model_validate_json(jobs)
     except json.JSONDecodeError as json_err:
@@ -66,10 +66,10 @@ async def submit_jobs_and_save_application(
             detail=f"Invalid jobs data: {str(val_err)}"
         )
 
-    # 2. Convert job items to dictionaries
+    # Convert job items to dictionaries
     jobs_to_apply_dicts = [job.model_dump() for job in job_request.jobs]
 
-    # 3. If a PDF file is provided, store it
+    # If a PDF file is provided, store it
     if cv is not None:
         if cv.content_type != "application/pdf":
             raise HTTPException(
@@ -86,13 +86,13 @@ async def submit_jobs_and_save_application(
                 detail=f"Failed to store PDF resume: {str(db_err)}"
             )
 
-    # 4. Upsert the application data
+    # Upsert the application data
     try:
         application_id = await application_uploader.insert_application_jobs(
             user_id=user_id,
             job_list_to_apply=jobs_to_apply_dicts
         )
-        return {"application_id": application_id}
+        return True if application_id else False
     except DatabaseOperationError as db_err:
         raise HTTPException(
             status_code=500, 

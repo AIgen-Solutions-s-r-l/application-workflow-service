@@ -1,7 +1,11 @@
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "lorenzo", "password": "12345678"}'
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
-curl -X POST "http://localhost:8010/applications" -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3NDc0ODEwfQ.nAcsJpUpM1z2Sb1Z42jBR6LPRw71R7EGGcGm1s2G-E8" -H "Content-Type: application/json" -d '{"jobs":[{"job_id":1111,"description":"We are looking for an experienced FP&A manager with exceptional data analytical skills and a strong desire to grow within a fast-expanding global organization. This hands-on role will report to the Head of Finance and be part of our international finance team, contributing to financial performance and operational excellence.","portal":"example","title":"FP&A manager"}]}'
+curl -X POST "http://localhost:8010/applications" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3NTY1NDgyfQ.hQ_fnKexr4_zxxCLVwErpeeXLRG_DNz16xs10lnLB08" \
+-H "Content-Type: multipart/form-data" \
+-F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'cv=@/path/to/file.pdf'
 
 curl -X GET "http://localhost:8010/applied" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3MjEzMzE3fQ.Ohl7nnoLwkrH3AW-TrwpY4CwrBwNQ5Vk9LEkqTQ4xEY" \
