@@ -167,25 +167,13 @@ The API provides the following endpoints:
 
 Refer to `routers/app_router.py` for additional details on API endpoints.
 
-Curl example:
+Curl example (**NOTE** that the cv is OPTIONAL, you can avoid it completely if the user doesn't upload it)
 ```
-curl -X POST "http://localhost:8006/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzMzNTA2NjAwfQ.MBd6MrGLrys168vDBaujWUlGeNUbtkwhOyd7OAE6dak" \
--H "Content-Type: application/json" \
--d '{
-    "jobs": [
-        {
-            "description": "aaaaaa",
-            "portal": "bbbbbb",
-            "title": "ccccccc"
-        },
-        {
-            "description": "aa3",
-            "portal": "bb3",
-            "title": "c3"
-        }
-    ]
-}'
+curl -X POST "http://localhost:8010/applications" \
+-H "Authorization: Bearer <TOKEN>" \
+-H "Content-Type: multipart/form-data" \
+-F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'cv=@/path/to/file.pdf'
 ```
 
 ![Matching 2](https://github.com/user-attachments/assets/deffe9c5-be3d-403e-857e-3bab02429e48)

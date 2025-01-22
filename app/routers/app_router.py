@@ -4,13 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from app.core.auth import get_current_user
 from app.core.config import Settings
+from app.core.exceptions import DatabaseOperationError
 from app.models.job import JobResponse
 from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
-from app.services.resume_ops import upsert_application_jobs
+from app.services.application_uploader_service import ApplicationUploaderService
 import logging
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import Settings
+from app.services.notification_service import NotificationPublisher
+from app.services.pdf_resume_service import PdfResumeService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,66 +21,85 @@ settings = Settings()
 
 mongo_client = AsyncIOMotorClient(settings.mongodb)
 
+application_uploader = ApplicationUploaderService()
+pdf_resume_service = PdfResumeService()
+
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from typing import Optional
+from pydantic import ValidationError
+
+router = APIRouter()
+
 @router.post(
     "/applications",
     summary="Submit Jobs and Save/Upsert Application",
     description=(
-        "Receives a list of jobs to apply to along with user authentication via JWT, "
-        "and upserts the application data in MongoDB by adding new jobs to the user's existing application."
+        "Receives a list of jobs (JSON string) and an optional PDF. "
+        "If a PDF is provided, store it in `pdf_resumes`. Also upserts application data."
     ),
-    response_description="Application ID",
-    responses={
-        200: {
-            "description": "Application successfully upserted.",
-            "content": {
-                "application/json": {
-                    "example": {
-                        "application_id": "60f6c73f4e9d3e27e4f29d9f"
-                    }
-                }
-            }
-        },
-        500: {
-            "description": "Internal Server Error. Failed to save application."
-        }
-    }
 )
 async def submit_jobs_and_save_application(
-    request: JobApplicationRequest, current_user=Depends(get_current_user)
+    jobs: str = Form(...),
+    cv: Optional[UploadFile] = File(None),
+    current_user=Depends(get_current_user),
 ):
     """
-    Receives a list of jobs to apply from the frontend and upserts the application data in MongoDB
-    by adding the new jobs to the user's existing application document or creating a new one if it doesn't exist.
-
-    Args:
-        request (JobApplicationRequest): The request payload containing `jobs`.
-        current_user: The authenticated user's ID obtained via JWT.
-
-    Returns:
-        dict: A dictionary containing the `application_id` of the saved/upserted application.
-
-    Raises:
-        HTTPException: For database operation failures.
+    - `jobs`: JSON string that will be validated as `JobApplicationRequest`.
+    - `cv`: Optional PDF file. If present, it will be stored in `pdf_resumes` 
+      with an empty `app_ids` array.
     """
-    user_id = current_user  # Assuming `get_current_user` directly returns the user_id
-    jobs_to_apply = request.jobs
 
+    user_id = current_user  # Assuming `get_current_user` returns the user_id
+
+    # Parse and validate the JSON string into the `JobApplicationRequest` model
     try:
-        # Convert JobItem objects to dictionaries
-        jobs_to_apply_dicts = [job.model_dump() for job in jobs_to_apply]
-
-        # Upsert the application: add new jobs to the existing jobs array or create a new document if none exists
-        application_id = await upsert_application_jobs(user_id, jobs_to_apply_dicts)
-
-        return {"application_id": str(application_id) if application_id else "Updated applications"}
-
-    except Exception as e:
-        logger.error(
-            f"Failed to save application for user_id {user_id}: {str(e)}",
-            exc_info=True,
+        job_request = JobApplicationRequest.model_validate_json(jobs)
+    except json.JSONDecodeError as json_err:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid JSON: {str(json_err)}"
         )
-        raise HTTPException(status_code=500, detail="Failed to save application.")
-    
+    except ValueError as val_err:
+        # model_validate_json can raise ValueError if the data doesn't match the schema
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid jobs data: {str(val_err)}"
+        )
+
+    # Convert job items to dictionaries
+    jobs_to_apply_dicts = [job.model_dump() for job in job_request.jobs]
+
+    # If a PDF file is provided, store it
+    cv_id = None
+    if cv is not None:
+        if cv.content_type != "application/pdf":
+            raise HTTPException(
+                status_code=400, 
+                detail="Uploaded file must be a PDF."
+            )
+        pdf_bytes = await cv.read()
+
+        try:
+            cv_id = await pdf_resume_service.store_pdf_resume(pdf_bytes)
+        except DatabaseOperationError as db_err:
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to store PDF resume: {str(db_err)}"
+            )
+
+    # Upsert the application data
+    try:
+        application_id = await application_uploader.insert_application_jobs(
+            user_id=user_id,
+            job_list_to_apply=jobs_to_apply_dicts,
+            cv_id=cv_id
+        )
+        return True if application_id else False
+    except DatabaseOperationError as db_err:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Failed to save application: {str(db_err)}"
+        )
 
 # Helper to fetch the doc from MongoDB for a specific user + collection
 async def fetch_user_doc(
