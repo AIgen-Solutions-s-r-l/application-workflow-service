@@ -90,7 +90,8 @@ async def submit_jobs_and_save_application(
     try:
         application_id = await application_uploader.insert_application_jobs(
             user_id=user_id,
-            job_list_to_apply=jobs_to_apply_dicts
+            job_list_to_apply=jobs_to_apply_dicts,
+            is_cv=True if cv else False
         )
         return True if application_id else False
     except DatabaseOperationError as db_err:
