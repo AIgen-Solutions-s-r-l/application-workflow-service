@@ -28,10 +28,10 @@ class ApplicationUploaderService:
             DatabaseOperationError: If there is an issue upserting the application to the database.
         """
         try:
-            # If a CV was uploaded, add "cv_gen": True to each job
+            # If a CV was uploaded, add "gen_cv": False to each job
             if cv_id:
                 for job in job_list_to_apply:
-                    job["cv_gen"] = True
+                    job["gen_cv"] = False
 
             # Perform the upsert or insert operation
             # (In this simple example, we are using .insert_one() — 
