@@ -70,6 +70,7 @@ async def submit_jobs_and_save_application(
     jobs_to_apply_dicts = [job.model_dump() for job in job_request.jobs]
 
     # If a PDF file is provided, store it
+    cv_id = None
     if cv is not None:
         if cv.content_type != "application/pdf":
             raise HTTPException(
@@ -79,7 +80,7 @@ async def submit_jobs_and_save_application(
         pdf_bytes = await cv.read()
 
         try:
-            await pdf_resume_service.store_pdf_resume(pdf_bytes)
+            cv_id = await pdf_resume_service.store_pdf_resume(pdf_bytes)
         except DatabaseOperationError as db_err:
             raise HTTPException(
                 status_code=500, 
@@ -91,7 +92,7 @@ async def submit_jobs_and_save_application(
         application_id = await application_uploader.insert_application_jobs(
             user_id=user_id,
             job_list_to_apply=jobs_to_apply_dicts,
-            is_cv=True if cv else False
+            cv_id=cv_id
         )
         return True if application_id else False
     except DatabaseOperationError as db_err:

@@ -9,7 +9,7 @@ notification_publisher = NotificationPublisher(settings=settings)
 
 class ApplicationUploaderService:
 
-    async def insert_application_jobs(self, user_id: str, job_list_to_apply: list, is_cv: bool = False) -> str:
+    async def insert_application_jobs(self, user_id: str, job_list_to_apply: list, cv_id: str = None) -> str:
         """
         Upsert the application data: if a document for the user does not exist, create it.
         If it exists, add the new jobs to the existing jobs array.
@@ -29,7 +29,7 @@ class ApplicationUploaderService:
         """
         try:
             # If a CV was uploaded, add "cv_gen": True to each job
-            if is_cv:
+            if cv_id:
                 for job in job_list_to_apply:
                     job["cv_gen"] = True
 
@@ -41,7 +41,7 @@ class ApplicationUploaderService:
                     "user_id": user_id,
                     "jobs": job_list_to_apply,
                     "sent": False,
-                    "is_cv": is_cv
+                    "cv_id": cv_id
                 }
             )
 
