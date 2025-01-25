@@ -41,6 +41,7 @@ router = APIRouter()
 async def submit_jobs_and_save_application(
     jobs: str = Form(...),
     cv: Optional[UploadFile] = File(None),
+    style: Optional[str] = Form(None),
     current_user=Depends(get_current_user),
 ):
     """
@@ -48,7 +49,6 @@ async def submit_jobs_and_save_application(
     - `cv`: Optional PDF file. If present, it will be stored in `pdf_resumes` 
       with an empty `app_ids` array.
     """
-
     user_id = current_user  # Assuming `get_current_user` returns the user_id
 
     # Parse and validate the JSON string into the `JobApplicationRequest` model
@@ -92,7 +92,8 @@ async def submit_jobs_and_save_application(
         application_id = await application_uploader.insert_application_jobs(
             user_id=user_id,
             job_list_to_apply=jobs_to_apply_dicts,
-            cv_id=cv_id
+            cv_id=cv_id,
+            style=style
         )
         return True if application_id else False
     except DatabaseOperationError as db_err:
