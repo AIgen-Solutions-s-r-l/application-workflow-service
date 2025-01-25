@@ -169,10 +169,11 @@ Refer to `routers/app_router.py` for additional details on API endpoints.
 
 Curl example (**NOTE** that the cv is OPTIONAL, you can avoid it completely if the user doesn't upload it)
 ```
-curl -X POST "http://localhost:8010/applications" \
--H "Authorization: Bearer <TOKEN>" \
+curl -X POST "http://localhost:8009/applications" \
+-H "Authorization: Bearer <>" \
 -H "Content-Type: multipart/form-data" \
--F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'jobs={"jobs":[{"job_id":6666,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'style=samudum_bold' \
 -F 'cv=@/path/to/file.pdf'
 ```
 
