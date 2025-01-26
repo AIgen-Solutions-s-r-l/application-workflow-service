@@ -41,6 +41,7 @@ class ApplicationUploaderService:
                     "user_id": user_id,
                     "jobs": job_list_to_apply,
                     "sent": False,
+                    "retries_left": 5,
                     "cv_id": cv_id
                 }
             )
