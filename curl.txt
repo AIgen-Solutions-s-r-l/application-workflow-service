@@ -2,7 +2,7 @@ curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: appli
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
 curl -X POST "http://localhost:8010/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJsb3JlbnpvIiwiaWQiOjgsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3ODI2OTYyfQ.exEqv1orOZgie0_BKZh_lFlQwoo7ydnbe4RcjtyHa5Y" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3OTE3ODkzfQ.WN9tDWZUohHX7-GaVLoaqpflMCdtMz7hHMVcMa2nHGs" \
 -H "Content-Type: multipart/form-data" \
 -F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
 -F 'cv=@/path/to/file.pdf'
