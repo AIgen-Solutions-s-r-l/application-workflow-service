@@ -1,5 +1,5 @@
 import json
-from typing import List, Optional
+from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from app.core.auth import get_current_user
@@ -41,6 +41,7 @@ router = APIRouter()
 async def submit_jobs_and_save_application(
     jobs: str = Form(...),
     cv: Optional[UploadFile] = File(None),
+    style: Optional[str] = Form(None),
     current_user=Depends(get_current_user),
 ):
     """
@@ -48,7 +49,6 @@ async def submit_jobs_and_save_application(
     - `cv`: Optional PDF file. If present, it will be stored in `pdf_resumes` 
       with an empty `app_ids` array.
     """
-
     user_id = current_user  # Assuming `get_current_user` returns the user_id
 
     # Parse and validate the JSON string into the `JobApplicationRequest` model
@@ -92,7 +92,8 @@ async def submit_jobs_and_save_application(
         application_id = await application_uploader.insert_application_jobs(
             user_id=user_id,
             job_list_to_apply=jobs_to_apply_dicts,
-            cv_id=cv_id
+            cv_id=cv_id,
+            style=style
         )
         return True if application_id else False
     except DatabaseOperationError as db_err:
@@ -126,28 +127,35 @@ async def fetch_user_doc(
 def parse_applications(
     doc: dict, 
     exclude_fields: Optional[List[str]] = None
-) -> List[JobResponse]:
+) -> Dict[str, JobResponse]:
     """
     Given a doc (with doc['content']), parse each application into `JobResponse`,
-    excluding fields in exclude_fields (if provided).
+    excluding fields in `exclude_fields` (if provided), and return a dictionary
+    keyed by app_id.
     """
-    apps_list = []
+    apps_dict = {}
+
     for app_id, raw_job_data in doc["content"].items():
         try:
-            if exclude_fields:
-                filtered_data = {
-                    k: v 
-                    for k, v in raw_job_data.items() 
+            # Filter out excluded fields if needed
+            filtered_data = (
+                {
+                    k: v
+                    for k, v in raw_job_data.items()
                     if k not in exclude_fields
                 }
-            else:
-                filtered_data = raw_job_data
-
+                if exclude_fields
+                else raw_job_data
+            )
+            
             job_data = JobResponse(**filtered_data)
-            apps_list.append(job_data)
+            
+            # Store the `JobResponse` object under the `app_id` key
+            apps_dict[app_id] = job_data
         except ValidationError as e:
             logger.error(f"Validation error for app_id {app_id}: {str(e)}")
-    return apps_list
+
+    return apps_dict
 
 # Endpoints for successful applications
 # ------------------------------------------------------------------------------
@@ -158,7 +166,7 @@ def parse_applications(
         "Fetch all successful job applications (from 'success_app' collection) "
         "for the user_id in the JWT, excluding resume and cover letter."
     ),
-    response_model=List[JobResponse]
+    response_model=Dict[str, JobResponse]
 )
 async def get_successful_applications(current_user=Depends(get_current_user)):
     try:
@@ -207,7 +215,7 @@ async def get_successful_application_details(app_id: str, current_user=Depends(g
         "Fetch all failed job applications (from 'failed_app' collection) "
         "for the user_id in the JWT, excluding resume and cover letter."
     ),
-    response_model=List[JobResponse]
+    response_model=Dict[str, JobResponse]
 )
 async def get_failed_applications(current_user=Depends(get_current_user)):
     try:

@@ -2,9 +2,16 @@ curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: appli
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
 curl -X POST "http://localhost:8010/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3NTY1NDgyfQ.hQ_fnKexr4_zxxCLVwErpeeXLRG_DNz16xs10lnLB08" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3OTE3ODkzfQ.WN9tDWZUohHX7-GaVLoaqpflMCdtMz7hHMVcMa2nHGs" \
 -H "Content-Type: multipart/form-data" \
 -F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'cv=@/path/to/file.pdf'
+
+curl -X POST "http://localhost:8009/applications" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3ODMzMjE0fQ.mcRbtbZepkIAhdbfxWzfW9CMFkWYOhK1mkT7L_NUoZo" \
+-H "Content-Type: multipart/form-data" \
+-F 'jobs={"jobs":[{"job_id":6666,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'style=samudum_bold' \
 -F 'cv=@/path/to/file.pdf'
 
 curl -X GET "http://localhost:8010/applied" \
