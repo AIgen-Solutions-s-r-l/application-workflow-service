@@ -5,7 +5,7 @@ from sqlalchemy import select
 from app.core.auth import get_current_user
 from app.core.config import Settings
 from app.core.exceptions import DatabaseOperationError
-from app.models.job import JobResponse
+from app.models.job import JobData
 from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
 from app.services.application_uploader_service import ApplicationUploaderService
 import logging
@@ -123,13 +123,13 @@ async def fetch_user_doc(
         )
     return doc
 
-# Helper to parse the doc's content into a list of JobResponse (excluding fields if desired)
+# Helper to parse the doc's content into a list of JobData
 def parse_applications(
     doc: dict, 
     exclude_fields: Optional[List[str]] = None
-) -> Dict[str, JobResponse]:
+) -> Dict[str, JobData]:
     """
-    Given a doc (with doc['content']), parse each application into `JobResponse`,
+    Given a doc (with doc['content']), parse each application into `JobData`,
     excluding fields in `exclude_fields` (if provided), and return a dictionary
     keyed by app_id.
     """
@@ -148,9 +148,9 @@ def parse_applications(
                 else raw_job_data
             )
             
-            job_data = JobResponse(**filtered_data)
+            job_data = JobData(**filtered_data)
             
-            # Store the `JobResponse` object under the `app_id` key
+            # Store the `JobData` object under the `app_id` key
             apps_dict[app_id] = job_data
         except ValidationError as e:
             logger.error(f"Validation error for app_id {app_id}: {str(e)}")
@@ -166,7 +166,7 @@ def parse_applications(
         "Fetch all successful job applications (from 'success_app' collection) "
         "for the user_id in the JWT, excluding resume and cover letter."
     ),
-    response_model=Dict[str, JobResponse]
+    response_model=Dict[str, JobData]
 )
 async def get_successful_applications(current_user=Depends(get_current_user)):
     try:
@@ -215,7 +215,7 @@ async def get_successful_application_details(app_id: str, current_user=Depends(g
         "Fetch all failed job applications (from 'failed_app' collection) "
         "for the user_id in the JWT, excluding resume and cover letter."
     ),
-    response_model=Dict[str, JobResponse]
+    response_model=Dict[str, JobData]
 )
 async def get_failed_applications(current_user=Depends(get_current_user)):
     try:

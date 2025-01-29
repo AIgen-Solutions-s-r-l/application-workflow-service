@@ -2,10 +2,12 @@ from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 
-class JobResponse(BaseModel):
+class JobData(BaseModel):
     """
     Model for job details in a response.
     """
+    id: int = Field(None, description="The unique ID of the job record.")
+    portal: Optional[str] = Field(None, description="The portal where the job was found.")
     title: Optional[str] = Field(None, description="The title of the job.")
     workplace_type: Optional[str] = Field(None, description="The workplace type, e.g., onsite, remote, or hybrid.")
     posted_date: Optional[datetime] = Field(None, description="The date the job was posted.")
@@ -17,10 +19,3 @@ class JobResponse(BaseModel):
 
     class Config:
         from_attributes = True
-
-class JobData(JobResponse):
-    """
-    Model representing comprehensive job details.
-    """
-    id: int = Field(None, description="The unique ID of the job record.")
-    portal: Optional[str] = Field(None, description="The portal where the job was found.")

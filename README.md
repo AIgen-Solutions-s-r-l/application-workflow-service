@@ -193,7 +193,7 @@ Our application provides four main endpoints for retrieving user applications (b
      -H "Authorization: Bearer <your_jwt_token>" \
      -H "Content-Type: application/json"
      ```
-   - **Response**: A list of jobs in the `Dict[app_id, JobResponse]` model format.
+   - **Response**: A list of jobs in the `Dict[app_id, JobData]` model format.
 
 2. **Get All Failed Applications**  
    - **Endpoint**: `GET /fail_applied`  
@@ -204,7 +204,7 @@ Our application provides four main endpoints for retrieving user applications (b
      -H "Authorization: Bearer <your_jwt_token>" \
      -H "Content-Type: application/json"
      ```
-   - **Response**: A list of jobs in the `Dict[app_id, JobResponse]` model format.
+   - **Response**: A list of jobs in the `Dict[app_id, JobData]` model format.
 
 3. **Get Detailed Info on a Specific Successful Application**  
    - **Endpoint**: `GET /applied/{app_id}`  
