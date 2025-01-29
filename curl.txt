@@ -7,10 +7,10 @@ curl -X POST "http://localhost:8010/applications" \
 -F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
 -F 'cv=@/path/to/file.pdf'
 
-curl -X POST "http://localhost:8009/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3ODMzMjE0fQ.mcRbtbZepkIAhdbfxWzfW9CMFkWYOhK1mkT7L_NUoZo" \
+curl -X POST "http://localhost:8013/applications" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTEzMjc0fQ.FVvezI2V8j7yO9Sx5ViAkFOA5FrO2HL0duH6yrtu1wU" \
 -H "Content-Type: multipart/form-data" \
--F 'jobs={"jobs":[{"job_id":6666,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'jobs={"jobs":[{"job_id":777,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
 -F 'style=samudum_bold' \
 -F 'cv=@/path/to/file.pdf'
 
