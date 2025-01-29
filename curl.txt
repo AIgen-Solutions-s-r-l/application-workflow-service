@@ -11,7 +11,7 @@ curl -X POST "http://localhost:8012/applications" \
         "portal": "ExamplePortal",
         "title": "Senior Software Engineer",
         "workplace_type": "remote",
-        "posted_date": "2025-01-01T12:34:56Z",
+        "posted_date": "2025-01-01",
         "job_state": "open",
         "description": "We are seeking a Senior Software Engineer to develop high-quality software solutions.",
         "apply_link": "https://example.com/job/12345/apply",
