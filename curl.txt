@@ -1,11 +1,35 @@
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "lorenzo", "password": "12345678"}'
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
-curl -X POST "http://localhost:8010/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3OTE3ODkzfQ.WN9tDWZUohHX7-GaVLoaqpflMCdtMz7hHMVcMa2nHGs" \
--H "Content-Type: multipart/form-data" \
--F 'jobs={"jobs":[{"job_id":1111,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
--F 'cv=@/path/to/file.pdf'
+curl -X POST "http://localhost:8012/applications" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTc0MDgxfQ.bIrcXkwy-GFLFygqKbTdg1-8qy6Qd8Peb9m27CvM4V0" \
+  -H "Content-Type: multipart/form-data" \
+  -F 'jobs={
+    "jobs": [
+      {
+        "id": 12345,
+        "portal": "ExamplePortal",
+        "title": "Senior Software Engineer",
+        "workplace_type": "remote",
+        "posted_date": "2025-01-01T12:34:56Z",
+        "job_state": "open",
+        "description": "We are seeking a Senior Software Engineer to develop high-quality software solutions.",
+        "apply_link": "https://example.com/job/12345/apply",
+        "company_name": "TechCorp",
+        "location": "San Francisco, CA",
+        "short_description": "Exciting role at a fast-growing tech company.",
+        "field": "Technology",
+        "company_logo": "https://example.com/assets/logos/techcorp.png",
+        "experience": "5+ years of experience",
+        "skills_required": [
+          "Python",
+          "Docker",
+          "Kubernetes",
+          "AWS"
+        ]
+      }
+    ]
+  }'
 
 curl -X POST "http://localhost:8013/applications" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTEzMjc0fQ.FVvezI2V8j7yO9Sx5ViAkFOA5FrO2HL0duH6yrtu1wU" \
