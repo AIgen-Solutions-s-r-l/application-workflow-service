@@ -27,6 +27,6 @@ async def health_check():
     )
     
     try:
-        return healthCheckRoute(factory=_healthChecks)
+        return await healthCheckRoute(factory=_healthChecks)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

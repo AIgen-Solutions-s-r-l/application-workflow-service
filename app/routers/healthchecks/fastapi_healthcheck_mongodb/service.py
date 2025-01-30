@@ -3,7 +3,7 @@ from app.routers.healthchecks.fastapi_healthcheck.service import HealthCheckBase
 from app.routers.healthchecks.fastapi_healthcheck.enum import HealthCheckStatusEnum
 from app.routers.healthchecks.fastapi_healthcheck.domain import HealthCheckInterface
 from typing import List, Optional
-from pymongo import MongoClient
+from pymongo import AsyncMongoClient
 
 logger = logging.getLogger(__name__)
 
@@ -21,11 +21,11 @@ class HealthCheckMongoDB(HealthCheckBase, HealthCheckInterface):
         self._alias = alias
         self._tags = tags
 
-    def __checkHealth__(self) -> HealthCheckStatusEnum:
+    async def __checkHealth__(self) -> HealthCheckStatusEnum:
         res: HealthCheckStatusEnum = HealthCheckStatusEnum.UNHEALTHY
         try:
-            client = MongoClient(self._connection_uri, serverSelectionTimeoutMS=5000)
-            if client.server_info():
+            client = AsyncMongoClient(self._connection_uri, serverSelectionTimeoutMS=5000)
+            if await client.server_info():
                 res = HealthCheckStatusEnum.HEALTHY
         except Exception as e:
             logger.error(f"Mongo health check failed: {e}")
