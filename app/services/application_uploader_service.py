@@ -1,10 +1,9 @@
 from app.core.mongo import applications_collection
 from app.core.exceptions import DatabaseOperationError
 from app.services.notification_service import NotificationPublisher
-from app.core.rabbitmq_client import settings
 
 
-notification_publisher = NotificationPublisher(settings=settings)
+notification_publisher = NotificationPublisher()
 
 class ApplicationUploaderService:
 
