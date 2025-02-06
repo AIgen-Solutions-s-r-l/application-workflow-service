@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from app.core.rabbitmq_client import AsyncRabbitMQClient
-from app.core.config import Settings
+from app.core.config import settings
 
 class BasePublisher(ABC):
-    def __init__(self, settings: Settings):
+    def __init__(self):
         self.settings = settings
         self.rabbitmq_client = AsyncRabbitMQClient(settings.rabbitmq_url)
         self.queue_name = self.get_queue_name()

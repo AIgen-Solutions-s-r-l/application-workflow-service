@@ -1,13 +1,9 @@
 import logging
 from fastapi import FastAPI
-from app.core.config import Settings
 from app.routers.app_router import router as application_router
 from app.routers.healthcheck_router import router as healthcheck_router
 
 logging.basicConfig(level=logging.WARNING)
-
-# Load settings
-settings = Settings()
 
 # Initialize FastAPI
 app = FastAPI()

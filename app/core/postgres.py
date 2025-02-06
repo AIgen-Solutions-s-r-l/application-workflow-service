@@ -4,13 +4,10 @@ import os
 import logging
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy.orm import declarative_base
-from app.core.config import Settings
+from app.core.config import settings
 
 # Set up logger
 logger = logging.getLogger(__name__)
-
-# Load settings from the configuration file
-settings = Settings()
 
 # Determine the database URL based on the environment
 # Use test_database_url if the `PYTEST_RUNNING` environment variable is set

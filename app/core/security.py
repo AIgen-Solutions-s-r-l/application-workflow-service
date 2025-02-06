@@ -1,11 +1,8 @@
 # app/core/security.py
-import bcrypt
-from datetime import datetime, timedelta, timezone
 from jose import jwt
 
-from app.core.config import Settings
+from app.core.config import settings
 
-settings = Settings()
 
 def verify_jwt_token(token: str) -> dict:
     """

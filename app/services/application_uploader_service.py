@@ -1,9 +1,8 @@
 from app.core.mongo import applications_collection
 from app.core.exceptions import DatabaseOperationError
 from app.services.notification_service import NotificationPublisher
-from app.core.rabbitmq_client import Settings
+from app.core.rabbitmq_client import settings
 
-settings = Settings()
 
 notification_publisher = NotificationPublisher(settings=settings)
 

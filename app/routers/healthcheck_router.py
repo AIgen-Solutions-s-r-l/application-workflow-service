@@ -2,11 +2,10 @@ from fastapi import APIRouter
 from app.routers.healthchecks.fastapi_healthcheck import HealthCheckFactory, healthCheckRoute
 from app.routers.healthchecks.fastapi_healthcheck_mongodb import HealthCheckMongoDB
 from app.routers.healthchecks.fastapi_healthcheck_rabbitmq import HealthCheckRabbitMQ
-from app.core.config import Settings
+from app.core.config import settings
 from fastapi import HTTPException
 
 router = APIRouter(tags=["healthcheck"])
-settings = Settings()
 
 @router.get(
     "/healthcheck",

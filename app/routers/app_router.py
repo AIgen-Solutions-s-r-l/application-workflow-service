@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from app.core.auth import get_current_user
-from app.core.config import Settings
+from app.core.config import settings
 from app.core.exceptions import DatabaseOperationError
 from app.models.job import JobData
 from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
@@ -11,13 +11,10 @@ from app.services.application_uploader_service import ApplicationUploaderService
 import logging
 from pydantic import ValidationError
 from motor.motor_asyncio import AsyncIOMotorClient
-from app.core.config import Settings
-from app.services.notification_service import NotificationPublisher
 from app.services.pdf_resume_service import PdfResumeService
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
-settings = Settings()
 
 mongo_client = AsyncIOMotorClient(settings.mongodb)
 
