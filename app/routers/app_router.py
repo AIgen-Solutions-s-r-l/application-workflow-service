@@ -1,34 +1,26 @@
 import json
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+
+from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import ValidationError
+
 from app.core.auth import get_current_user
 from app.core.config import Settings
 from app.core.exceptions import DatabaseOperationError
+from app.log.logging import logger
 from app.models.job import JobData
 from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
 from app.services.application_uploader_service import ApplicationUploaderService
-import logging
-from pydantic import ValidationError
-from motor.motor_asyncio import AsyncIOMotorClient
-from app.core.config import Settings
-from app.services.notification_service import NotificationPublisher
 from app.services.pdf_resume_service import PdfResumeService
 
-logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = Settings()
 
 mongo_client = AsyncIOMotorClient(settings.mongodb)
-
 application_uploader = ApplicationUploaderService()
 pdf_resume_service = PdfResumeService()
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
-from typing import Optional
-from pydantic import ValidationError
-
-router = APIRouter()
 
 @router.post(
     "/applications",
@@ -46,7 +38,7 @@ async def submit_jobs_and_save_application(
 ):
     """
     - `jobs`: JSON string that will be validated as `JobApplicationRequest`.
-    - `cv`: Optional PDF file. If present, it will be stored in `pdf_resumes` 
+    - `cv`: Optional PDF file. If present, it will be stored in `pdf_resumes`
       with an empty `app_ids` array.
     """
     user_id = current_user  # Assuming `get_current_user` returns the user_id
@@ -74,16 +66,15 @@ async def submit_jobs_and_save_application(
     if cv is not None:
         if cv.content_type != "application/pdf":
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="Uploaded file must be a PDF."
             )
         pdf_bytes = await cv.read()
-
         try:
             cv_id = await pdf_resume_service.store_pdf_resume(pdf_bytes)
         except DatabaseOperationError as db_err:
             raise HTTPException(
-                status_code=500, 
+                status_code=500,
                 detail=f"Failed to store PDF resume: {str(db_err)}"
             )
 
@@ -98,14 +89,15 @@ async def submit_jobs_and_save_application(
         return True if application_id else False
     except DatabaseOperationError as db_err:
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Failed to save application: {str(db_err)}"
         )
 
+
 # Helper to fetch the doc from MongoDB for a specific user + collection
 async def fetch_user_doc(
-    db_name: str, 
-    collection_name: str, 
+    db_name: str,
+    collection_name: str,
     user_id: str
 ) -> dict:
     """
@@ -118,14 +110,15 @@ async def fetch_user_doc(
     doc = await collection.find_one({"user_id": user_id})
     if not doc or "content" not in doc or not doc["content"]:
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail=f"No applications found in {collection_name} for this user."
         )
     return doc
 
-# Helper to parse the doc's content into a list of JobData
+
+# Helper to parse the doc's content into a dictionary of JobData
 def parse_applications(
-    doc: dict, 
+    doc: dict,
     exclude_fields: Optional[List[str]] = None
 ) -> Dict[str, JobData]:
     """
@@ -137,25 +130,22 @@ def parse_applications(
 
     for app_id, raw_job_data in doc["content"].items():
         try:
-            # Filter out excluded fields if needed
             filtered_data = (
-                {
-                    k: v
-                    for k, v in raw_job_data.items()
-                    if k not in exclude_fields
-                }
+                {k: v for k, v in raw_job_data.items() if k not in exclude_fields}
                 if exclude_fields
                 else raw_job_data
             )
-            
             job_data = JobData(**filtered_data)
-            
-            # Store the `JobData` object under the `app_id` key
             apps_dict[app_id] = job_data
         except ValidationError as e:
-            logger.error(f"Validation error for app_id {app_id}: {str(e)}")
-
+            logger.error(
+                "Validation error for app_id {app_id}: {error}",
+                app_id=app_id,
+                error=str(e),
+                event_type="validation_error"
+            )
     return apps_dict
+
 
 # Endpoints for successful applications
 # ------------------------------------------------------------------------------
@@ -177,7 +167,14 @@ async def get_successful_applications(current_user=Depends(get_current_user)):
         return apps_list
 
     except Exception as e:
-        logger.error(f"Failed to fetch successful apps for user {current_user}: {str(e)}")
+        logger.exception(
+            "Failed to fetch successful apps for user {user}: {error}",
+            user=current_user,
+            error=str(e),
+            event_type="fetch_error",
+            error_type=type(e).__name__,
+            error_details=str(e)
+        )
         raise HTTPException(status_code=500, detail=f"Failed to fetch successful apps: {str(e)}")
 
 
@@ -203,8 +200,17 @@ async def get_successful_application_details(app_id: str, current_user=Depends(g
         return DetailedJobData(resume_optimized=resume_optimized, cover_letter=cover_letter)
 
     except Exception as e:
-        logger.error(f"Failed to fetch detailed info for app_id {app_id} for user {current_user}: {str(e)}")
+        logger.exception(
+            "Failed to fetch detailed info for app_id {app_id} for user {user}: {error}",
+            app_id=app_id,
+            user=current_user,
+            error=str(e),
+            event_type="fetch_error",
+            error_type=type(e).__name__,
+            error_details=str(e)
+        )
         raise HTTPException(status_code=500, detail=f"Failed to fetch detailed application info: {str(e)}")
+
 
 # Endpoints for failed applications
 # ------------------------------------------------------------------------------
@@ -226,7 +232,14 @@ async def get_failed_applications(current_user=Depends(get_current_user)):
         return apps_list
 
     except Exception as e:
-        logger.error(f"Failed to fetch failed apps for user {current_user}: {str(e)}")
+        logger.exception(
+            "Failed to fetch failed apps for user {user}: {error}",
+            user=current_user,
+            error=str(e),
+            event_type="fetch_error",
+            error_type=type(e).__name__,
+            error_details=str(e)
+        )
         raise HTTPException(status_code=500, detail=f"Failed to fetch failed apps: {str(e)}")
 
 
@@ -252,5 +265,13 @@ async def get_failed_application_details(app_id: str, current_user=Depends(get_c
         return DetailedJobData(resume_optimized=resume_optimized, cover_letter=cover_letter)
 
     except Exception as e:
-        logger.error(f"Failed to fetch detailed info for app_id {app_id} for user {current_user}: {str(e)}")
+        logger.exception(
+            "Failed to fetch detailed info for app_id {app_id} for user {user}: {error}",
+            app_id=app_id,
+            user=current_user,
+            error=str(e),
+            event_type="fetch_error",
+            error_type=type(e).__name__,
+            error_details=str(e)
+        )
         raise HTTPException(status_code=500, detail=f"Failed to fetch detailed application info: {str(e)}")
