@@ -5,6 +5,9 @@ curl -X GET "http://localhost:8010/healthcheck"
 
 curl -X POST "http://localhost:8012/applications" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTc0MDgxfQ.bIrcXkwy-GFLFygqKbTdg1-8qy6Qd8Peb9m27CvM4V0" \
+
+curl -X POST "http://localhost:8019/applications" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MjkyMTU3fQ.3VC6f7PYJbSXZW23w8zL-M8UNdXHhplBu0ZxaAkqqeM" \
   -H "Content-Type: multipart/form-data" \
   -F 'jobs={
     "jobs": [
@@ -33,15 +36,15 @@ curl -X POST "http://localhost:8012/applications" \
     ]
   }'
 
-curl -X POST "http://localhost:8013/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTEzMjc0fQ.FVvezI2V8j7yO9Sx5ViAkFOA5FrO2HL0duH6yrtu1wU" \
+curl -X POST "http://localhost:8019/applications" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MjkwNTQ2fQ.HFB33SxmktgX1eUtR6EIUrRv7LxGki9QUBIkqYxGXX4" \
 -H "Content-Type: multipart/form-data" \
 -F 'jobs={"jobs":[{"job_id":777,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
 -F 'style=samudum_bold' \
 -F 'cv=@/path/to/file.pdf'
 
-curl -X GET "http://localhost:8010/applied" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM3MjEzMzE3fQ.Ohl7nnoLwkrH3AW-TrwpY4CwrBwNQ5Vk9LEkqTQ4xEY" \
+curl -X GET "http://localhost:8019/applied" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MjkyMTU3fQ.3VC6f7PYJbSXZW23w8zL-M8UNdXHhplBu0ZxaAkqqeM" \
 -H "Content-Type: application/json"
 
 curl -X GET "http://localhost:8008/fail_applied" \

@@ -1,9 +1,8 @@
-import logging
+from typing import Any, Dict
+from app.log.logging import logger
 from app.services.base_publisher import BasePublisher
 from app.core.config import settings
 
-
-logger = logging.getLogger(__name__)
 
 class NotificationPublisher(BasePublisher):
     def get_queue_name(self) -> str:
@@ -13,6 +12,6 @@ class NotificationPublisher(BasePublisher):
         """
         Publishes the notification about the update on the queue
         """
-        logger.debug(f"Publishing notification about application update")
+        logger.info("Publishing notification about application update", event_type="notification_publishing")
 
         await self.publish({"updated": True}, False)

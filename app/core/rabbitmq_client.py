@@ -3,7 +3,7 @@
 import json
 import aio_pika
 import asyncio
-from loguru import logger
+from app.log.logging import logger
 from typing import Callable, Optional
 
 
@@ -24,9 +24,16 @@ class AsyncRabbitMQClient:
         try:
             self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
             self.channel = await self.connection.channel()
-            logger.info("RabbitMQ connection established")
+            logger.info(
+                "RabbitMQ connection established",
+                event_type="rabbitmq_connection_established"
+            )
         except Exception as e:
-            logger.error(f"Failed to connect to RabbitMQ: {e}")
+            logger.error(
+                "Failed to connect to RabbitMQ: {error}",
+                error=str(e),
+                event_type="rabbitmq_connection_failed"
+            )
             raise
 
     async def ensure_queue(self, queue_name: str, durable: bool = False) -> aio_pika.Queue:
@@ -34,10 +41,22 @@ class AsyncRabbitMQClient:
         await self.connect()
         try:
             queue = await self.channel.declare_queue(queue_name, durable=durable)
-            logger.info(f"Queue '{queue_name}' ensured (durability={durable})")
+            logger.info(
+                "Queue '{queue_name}' ensured (durability={durable})",
+                queue_name=queue_name,
+                durable=durable,
+                event_type="queue_ensured"
+            )
             return queue
         except Exception as e:
-            logger.error(f"Failed to ensure queue '{queue_name}': {e}")
+            logger.error(
+                "Failed to ensure queue '{queue_name}': {error}",
+                queue_name=queue_name,
+                error=str(e),
+                event_type="queue_ensure_failed",
+                error_type=type(e).__name__,
+                error_details=str(e)
+            )
             raise
 
     async def publish_message(self, queue_name: str, message: dict, persistent: bool = False) -> None:
@@ -49,13 +68,27 @@ class AsyncRabbitMQClient:
             await self.channel.default_exchange.publish(
                 aio_pika.Message(
                     body=message_body,
-                    delivery_mode=aio_pika.DeliveryMode.PERSISTENT if persistent else aio_pika.DeliveryMode.NOT_PERSISTENT,
+                    delivery_mode=(
+                        aio_pika.DeliveryMode.PERSISTENT 
+                        if persistent 
+                        else aio_pika.DeliveryMode.NOT_PERSISTENT
+                    ),
                 ),
                 routing_key=queue_name,
             )
-            logger.info(f"Message published to queue '{queue_name}': {message}")
+            logger.info(
+                "Message published to queue '{queue_name}': {message}",
+                queue_name=queue_name,
+                message=message,
+                event_type="message_published"
+            )
         except Exception as e:
-            logger.error(f"Failed to publish message to queue '{queue_name}': {e}")
+            logger.exception(
+                "Failed to publish message to queue '{queue_name}': {error}",
+                queue_name=queue_name,
+                error=str(e),
+                event_type="message_publish_failed"
+            )
             raise
 
     async def consume_messages(self, queue_name: str, callback: Callable, auto_ack: bool = False) -> None:
@@ -64,20 +97,40 @@ class AsyncRabbitMQClient:
             try:
                 await self.connect()
                 queue = await self.ensure_queue(queue_name, durable=False)
-                async with queue.iterator() as queue_iter:
+                # Use no_ack=auto_ack so that if auto_ack is True the broker auto-acknowledges messages.
+                async with queue.iterator(no_ack=auto_ack) as queue_iter:
                     async for message in queue_iter:
                         await callback(message)
-                        if auto_ack:
+                        # If auto_ack is False, we manually acknowledge the message.
+                        if not auto_ack:
                             await message.ack()
             except Exception as e:
-                logger.error(f"Error consuming messages from queue '{queue_name}': {e}")
-                await asyncio.sleep(5)  # Wait before reconnecting
+                logger.exception(
+                    "Error consuming messages from queue '{queue_name}': {error}",
+                    queue_name=queue_name,
+                    error=str(e),
+                    event_type="message_consume_error",
+                    error_type=type(e).__name__,
+                    error_details=str(e)
+                )
+                await asyncio.sleep(5)
 
     async def close(self) -> None:
         """Closes the RabbitMQ connection."""
         if self.connection and not self.connection.is_closed:
             try:
                 await self.connection.close()
-                logger.info("RabbitMQ connection closed")
+                logger.info(
+                    "RabbitMQ connection closed",
+                    event_type="rabbitmq_connection_closed"
+                )
             except Exception as e:
-                logger.error(f"Error while closing RabbitMQ connection: {e}")
+                logger.exception(
+                    "Error while closing RabbitMQ connection: {error}",
+                    error=str(e),
+                    event_type="rabbitmq_connection_close_error",
+                    error_type=type(e).__name__,
+                    error_details=str(e)
+                )
+
+# rabbit_client = AsyncRabbitMQClient(rabbitmq_url=settings.rabbitmq_url)
