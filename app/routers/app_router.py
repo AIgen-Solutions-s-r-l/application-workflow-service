@@ -6,7 +6,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import ValidationError
 
 from app.core.auth import get_current_user
-from app.core.config import Settings
+from app.core.config import settings
 from app.core.exceptions import DatabaseOperationError
 from app.log.logging import logger
 from app.models.job import JobData
@@ -15,7 +15,6 @@ from app.services.application_uploader_service import ApplicationUploaderService
 from app.services.pdf_resume_service import PdfResumeService
 
 router = APIRouter()
-settings = Settings()
 
 mongo_client = AsyncIOMotorClient(settings.mongodb)
 application_uploader = ApplicationUploaderService()

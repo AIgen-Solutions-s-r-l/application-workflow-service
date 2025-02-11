@@ -1,6 +1,11 @@
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "lorenzo", "password": "12345678"}'
 curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: application/json" -d '{"username": "johndoe", "password": "securepassword"}'
 
+curl -X GET "http://localhost:8010/healthcheck"
+
+curl -X POST "http://localhost:8012/applications" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTc0MDgxfQ.bIrcXkwy-GFLFygqKbTdg1-8qy6Qd8Peb9m27CvM4V0" \
+
 curl -X POST "http://localhost:8019/applications" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MjkyMTU3fQ.3VC6f7PYJbSXZW23w8zL-M8UNdXHhplBu0ZxaAkqqeM" \
   -H "Content-Type: multipart/form-data" \
