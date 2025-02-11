@@ -3,7 +3,6 @@ from app.log.logging import logger
 from app.services.base_publisher import BasePublisher
 from app.core.config import settings
 
-
 class NotificationPublisher(BasePublisher):
     def get_queue_name(self) -> str:
         return settings.middleware_queue

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.routers.app_router import router as application_router
+
 from app.routers.healthcheck_router import router as healthcheck_router
 
 # Initialize FastAPI

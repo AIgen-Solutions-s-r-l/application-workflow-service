@@ -12,7 +12,6 @@ from app.log.logging import logger
 from app.models.job import JobData
 from app.schemas.app_jobs import DetailedJobData, JobApplicationRequest
 from app.services.application_uploader_service import ApplicationUploaderService
-
 from app.services.pdf_resume_service import PdfResumeService
 
 router = APIRouter()
