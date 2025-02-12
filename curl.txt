@@ -3,9 +3,6 @@ curl -X POST https://auth.neuraltrading.group/auth/login -H "Content-Type: appli
 
 curl -X GET "http://localhost:8010/healthcheck"
 
-curl -X POST "http://localhost:8012/applications" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM4MTc0MDgxfQ.bIrcXkwy-GFLFygqKbTdg1-8qy6Qd8Peb9m27CvM4V0" \
-
 curl -X POST "http://localhost:8019/applications" \
   -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MjkyMTU3fQ.3VC6f7PYJbSXZW23w8zL-M8UNdXHhplBu0ZxaAkqqeM" \
   -H "Content-Type: multipart/form-data" \
@@ -37,7 +34,7 @@ curl -X POST "http://localhost:8019/applications" \
   }'
 
 curl -X POST "http://localhost:8019/applications" \
--H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MjkwNTQ2fQ.HFB33SxmktgX1eUtR6EIUrRv7LxGki9QUBIkqYxGXX4" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJqb2huZG9lIiwiaWQiOjQsImlzX2FkbWluIjpmYWxzZSwiZXhwIjoxNzM5MzY0ODU0fQ.cwFvXPCKETf71nclXUqF62EX9WbkSU61MGTsSdd6AFE" \
 -H "Content-Type: multipart/form-data" \
 -F 'jobs={"jobs":[{"job_id":777,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
 -F 'style=samudum_bold' \

@@ -6,7 +6,6 @@ import asyncio
 from app.log.logging import logger
 from typing import Callable, Optional
 
-
 class AsyncRabbitMQClient:
     """
     An asynchronous RabbitMQ client using aio_pika.
@@ -42,7 +41,7 @@ class AsyncRabbitMQClient:
         try:
             queue = await self.channel.declare_queue(queue_name, durable=durable)
             logger.info(
-                "Queue '{queue_name}' ensured (durability={durable})",
+                "Queue {queue_name} ensured (durability={durable})",
                 queue_name=queue_name,
                 durable=durable,
                 event_type="queue_ensured"
@@ -50,7 +49,7 @@ class AsyncRabbitMQClient:
             return queue
         except Exception as e:
             logger.error(
-                "Failed to ensure queue '{queue_name}': {error}",
+                "Failed to ensure queue {queue_name}: {error}",
                 queue_name=queue_name,
                 error=str(e),
                 event_type="queue_ensure_failed",
@@ -77,14 +76,14 @@ class AsyncRabbitMQClient:
                 routing_key=queue_name,
             )
             logger.info(
-                "Message published to queue '{queue_name}': {message}",
+                "Message published to queue {queue_name}: {message}",
                 queue_name=queue_name,
                 message=message,
                 event_type="message_published"
             )
         except Exception as e:
             logger.exception(
-                "Failed to publish message to queue '{queue_name}': {error}",
+                "Failed to publish message to queue {queue_name}: {error}",
                 queue_name=queue_name,
                 error=str(e),
                 event_type="message_publish_failed"
@@ -106,7 +105,7 @@ class AsyncRabbitMQClient:
                             await message.ack()
             except Exception as e:
                 logger.exception(
-                    "Error consuming messages from queue '{queue_name}': {error}",
+                    "Error consuming messages from queue {queue_name}: {error}",
                     queue_name=queue_name,
                     error=str(e),
                     event_type="message_consume_error",
