@@ -25,6 +25,9 @@ A Memory Bank has been established to track the project context, architecture de
    - Defined test configuration requirements
    - Outlined implementation approach for unit and integration tests
    - Identified critical components requiring test coverage
+6. Changed the `id` field in `JobData` model from UUID to string type:
+   - Updated `app/models/job.py` to use `Optional[str]` instead of `Optional[UUID]`
+   - Verified all tests pass with this change
 
 ## Current Goals
 1. Further analyze the authentication system implementation (app/core/auth.py)

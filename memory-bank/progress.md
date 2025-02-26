@@ -1,7 +1,7 @@
 # Progress Tracking - Application Manager Service
 
 ## Work Done
-- **February 27, 2025**: 
+- **February 27, 2025**:
   - Initialized Memory Bank for the Application Manager Service
   - Analyzed the existing codebase structure and components
   - Documented the core functionality and API endpoints
@@ -13,6 +13,9 @@
     - Documented test configuration requirements
     - Provided example implementations for key test modules
     - Identified critical components requiring thorough testing
+  - Fixed JobData model schema:
+    - Changed `id` field from UUID to string type
+    - Verified all tests pass with the updated schema
 
 ## Current Status
 The Application Manager Service is a functional backend service with endpoints for submitting and retrieving job applications. The service:
