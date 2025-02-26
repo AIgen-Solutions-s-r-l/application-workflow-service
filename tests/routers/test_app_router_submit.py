@@ -34,7 +34,9 @@ async def test_submit_jobs_success(test_client):
         }
     ]
     
-    mock_app_uploader = AsyncMock()
+    mock_app_uploader = MagicMock()
+    # Important: Use AsyncMock for async methods
+    mock_app_uploader.insert_application_jobs = AsyncMock()
     mock_app_uploader.insert_application_jobs.return_value = "mocked_app_id"
     
     with patch('app.routers.app_router.application_uploader', mock_app_uploader):
@@ -69,7 +71,9 @@ async def test_submit_jobs_with_style(test_client):
         }
     ]
     
-    mock_app_uploader = AsyncMock()
+    mock_app_uploader = MagicMock()
+    # Important: Use AsyncMock for async methods
+    mock_app_uploader.insert_application_jobs = AsyncMock()
     mock_app_uploader.insert_application_jobs.return_value = "mocked_app_id"
     
     with patch('app.routers.app_router.application_uploader', mock_app_uploader):
@@ -103,10 +107,14 @@ async def test_submit_jobs_with_pdf(test_client):
         }
     ]
     
-    mock_pdf_service = AsyncMock()
+    mock_pdf_service = MagicMock()
+    # Important: Use AsyncMock for async methods
+    mock_pdf_service.store_pdf_resume = AsyncMock()
     mock_pdf_service.store_pdf_resume.return_value = "mocked_pdf_id"
     
-    mock_app_uploader = AsyncMock()
+    mock_app_uploader = MagicMock()
+    # Important: Use AsyncMock for async methods
+    mock_app_uploader.insert_application_jobs = AsyncMock()
     mock_app_uploader.insert_application_jobs.return_value = "mocked_app_id"
     
     with patch('app.routers.app_router.pdf_resume_service', mock_pdf_service), \
@@ -201,7 +209,9 @@ async def test_submit_jobs_pdf_storage_error(test_client):
         }
     ]
     
-    mock_pdf_service = AsyncMock()
+    mock_pdf_service = MagicMock()
+    # Important: Use AsyncMock for async methods
+    mock_pdf_service.store_pdf_resume = AsyncMock()
     mock_pdf_service.store_pdf_resume.side_effect = DatabaseOperationError("PDF storage error")
     
     with patch('app.routers.app_router.pdf_resume_service', mock_pdf_service):
@@ -232,7 +242,9 @@ async def test_submit_jobs_application_storage_error(test_client):
         }
     ]
     
-    mock_app_uploader = AsyncMock()
+    mock_app_uploader = MagicMock()
+    # Important: Use AsyncMock for async methods
+    mock_app_uploader.insert_application_jobs = AsyncMock()
     mock_app_uploader.insert_application_jobs.side_effect = DatabaseOperationError("Application storage error")
     
     with patch('app.routers.app_router.application_uploader', mock_app_uploader):
