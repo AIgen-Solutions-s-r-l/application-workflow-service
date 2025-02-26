@@ -49,6 +49,19 @@ This document tracks key architectural and design decisions made during the deve
    - **Rationale:** Different test types are needed to ensure both component-level correctness and system-wide functionality.
    - **Implications:** Requires more initial development time but provides long-term stability and confidence in changes.
 
+## February 27, 2025 - JobData Schema Modification
+
+**Context:** The `JobData` model in `app/models/job.py` had its `id` field defined as `Optional[UUID]` type, which was causing issues.
+
+**Decision:**
+- **Change:** Modified the `id` field in `JobData` model from `Optional[UUID]` to `Optional[str]`.
+- **Rationale:** String IDs offer more flexibility and are more commonly used across various systems and databases. They can accommodate both UUID strings and other ID formats without requiring type conversion.
+- **Implementation:** Removed the `uuid` import and changed the field type definition. All tests were run to verify the change didn't break existing functionality.
+- **Implications:**
+  - More flexible ID handling
+  - Better compatibility with external systems that might use different ID formats
+  - Simplified data handling as string manipulation is more straightforward than UUID operations
+
 2. **70% Minimum Coverage Target**
    - **Decision:** Set a minimum code coverage target of 70% for critical components.
    - **Rationale:** Balances reasonable test coverage with development effort, focusing on the most important functionality.
