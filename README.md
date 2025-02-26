@@ -172,7 +172,7 @@ Curl example (**NOTE** that the cv is OPTIONAL, you can avoid it completely if t
 curl -X POST "http://localhost:8009/applications" \
 -H "Authorization: Bearer <>" \
 -H "Content-Type: multipart/form-data" \
--F 'jobs={"jobs":[{"job_id":6666,"description":"Boh","portal":"example","title":"FP&A manager"}]}' \
+-F 'jobs={"jobs":[{"id":"12345678-1234-1234-1234-123456789abc","description":"Boh","portal":"example","title":"FP&A manager"}]}' \
 -F 'style=samudum_bold' \
 -F 'cv=@/path/to/file.pdf'
 ```
