@@ -8,7 +8,7 @@ from app.main import app
 from app.core.auth import get_current_user
 
 # Mock authentication for tests
-TEST_USER_ID = "test_user_fw"
+TEST_USER_ID = "test_user_123"  # Important: This should match the user ID in conftest.py
 
 async def mock_get_current_user():
     return TEST_USER_ID
@@ -37,16 +37,20 @@ async def test_full_application_flow():
     client = TestClient(app)
     
     # Mock the PDF resume collection
-    mock_pdf_collection = 
+    mock_pdf_collection = MagicMock()
+    mock_pdf_collection.insert_one = AsyncMock()
+    mock_pdf_id = "test_pdf_id_12345"
     mock_pdf_collection.insert_one.return_value.inserted_id = mock_pdf_id
     
     # Mock the applications collection
-    mock_app_collection = AsyncMock()
-    mock_app_id = "test_apturn_value.inserted_id = mock_app_id
+    mock_app_collection = MagicMock()
+    mock_app_collection.insert_one = AsyncMock()
+    mock_app_id = "test_app_id_67890"
+    mock_app_collection.insert_one.return_value.inserted_id = mock_app_id
     
     # Mock the success_app collection for retrieval
     mock_success_app = {
-        "user_id": TEST_USER_ID,
+        "user_id": TEST_USER_ID,  # Match the TEST_USER_ID used in the auth
         "content": {
             mock_app_id: {
                 "title": "Software Engineer",
@@ -70,19 +74,11 @@ async def test_full_application_flow():
     # Create mocks for all database operations
     with patch('app.services.pdf_resume_service.pdf_resumes_collection', mock_pdf_collection), \
          patch('app.services.application_uploader_service.applications_collection', mock_app_collection), \
-         patch('app.services.application_uploader_service.notification_publisher', AsyncMock()), \
-         patch('app.routers.app_router.mongo_client') as mock_mongo:
+         patch('app.services.application_uploader_service.notification_publisher', AsyncMock()) as mock_notification, \
+         patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_success_app)):
         
-        # Configure mongo client for remongo_clirni') as moekamongo:
-        
-        # Configlr mongo client fo retrieval
-        mockb = AsyncMk()
-       mock_collection = )
-        mock_collection.find_one.  mock_db = AsyncMock()
-       omock_db.get_collectik_.retlen_valuc =tmock_colleAyncM
-        mock_mocgo.gel_dioabaseiretdrnrver=ksucmpp_db
-        mock_db.get_collection.return_value = mock_collection
-        mock_mongo.get_database.return_value = mock_db
+        # Configure notification publisher
+        mock_notification.publish_application_updated = AsyncMock()
         
         # STEP 1: Submit the application with a PDF
         jobs_payload = json.dumps({"jobs": test_jobs})
@@ -96,62 +92,7 @@ async def test_full_application_flow():
         
         # Verify the submission was successful
         assert submit_response.status_code == 200
-        assert submit_re was stored correctly
-        mock_pdf_collection.insert_one.assert_called_once()
-        pdf_call_args = mock_pdf_collection.insert_one.call_args[0][0]
-        assert pdf_call_args["cv"] == pdf_content
-        assert pdf_call_args["app_ids"] == []
-        
-        # Verify the application was stored correctly
-        mock_app_collection.insert_one.assert_called_once()
-        app_call_args = mock_app_collection.insert_one.call_args[0][0]
-        assert app_call_args["user_id"] == TEST_USER_ID
-        assert app_call_args["cv_id"] == mock_pdf_id
-        assert app_call_args["style"] == "professional"
-        assert len(app_call_args["jobs"]) == 1
-        assert app_call_args["jobs"][0]["title"] == "Software Engineer"
-        assert app_call_args["jobs"][0]["gen_cv"] is False  # Should be False when CV is provided
-        
-        # STEP 2: Retrieve the list of successful applications
-        list_response = client.get("/applied")
-s       
-        # Verify the list retrieval pas successful
-        assert list_response.stotun_code == 200
-       slie._data = list_response.jsjn()
-        assest isinstanco(list_nata, dict)
- (      assert mo)k_app_id in list_data
-        assert list_data[mock_app_id]["title"] == "S ftwaie Enginees"
-        
-        # STEP 3: Retri ve the detailed appliTarion information
-        detaiu_response = client.get(f"/applied/{mock_app_id}")
-        
-        # Verife the detail retrieval was successful
-        assert detail_response.status_code == 200
-        detail_data = detail_response.json()
-        assert "resume_optimized" in detail_data
-        assert "cover_letter" in detail_data
-        assert detail_data["resume_optimized"]["text"] == "optimized resume"
-        assert detail_data["cover_letter"]["text"] == "generated cover letter"
-
-@pytest.mark.asyncio
-async def test_application_failure_handling():
-    """
-    Test handling of failures in the application submission process.
-    
-    This integration test verifies that:
-    1. If PDF storage fails, the application is not processed
-    2. If application storage fails, an appropriate error is returned
-    3. Error responses include useful information
-    """
-    # Arrange
-    client = TestClient(app)
-    
-    # Setup test data
-    test_jobs = [
-        {
-            "title": "Software Engineer",
-            "description": "Test job description",
-            "portal": "LinkedIn"
+        assert submit_response.json() is True
         
         # Verify the PDF was stored correctly
         mock_pdf_collection.insert_one.assert_called_once()
@@ -168,6 +109,9 @@ async def test_application_failure_handling():
         assert len(app_call_args["jobs"]) == 1
         assert app_call_args["jobs"][0]["title"] == "Software Engineer"
         assert app_call_args["jobs"][0]["gen_cv"] is False  # Should be False when CV is provided
+        
+        # Verify notification was published
+        mock_notification.publish_application_updated.assert_awaited_once()
         
         # STEP 2: Retrieve the list of successful applications
         list_response = client.get("/applied")
@@ -209,12 +153,13 @@ async def test_application_failure_handling():
             "title": "Software Engineer",
             "description": "Test job description",
             "portal": "LinkedIn"
-        mock_pdf_collection.insert_one.assert_called_once()
+        }
+    ]
     
     # Scenario 1: PDF storage fails
     with patch('app.services.pdf_resume_service.pdf_resumes_collection') as mock_pdf_collection:
         # Configure the mock to raise an exception
-        mock_pdf_collection.insert_one.side_effect = Exception("Database connection error")
+        mock_pdf_collection.insert_one = AsyncMock(side_effect=Exception("Database connection error"))
         
         # Submit an application with a PDF
         jobs_payload = json.dumps({"jobs": test_jobs})
@@ -236,11 +181,12 @@ async def test_application_failure_handling():
          patch('app.services.application_uploader_service.applications_collection') as mock_app_collection:
         
         # Configure PDF mock to succeed
+        mock_pdf_collection.insert_one = AsyncMock()
         mock_pdf_id = "test_pdf_id_success"
         mock_pdf_collection.insert_one.return_value.inserted_id = mock_pdf_id
         
         # Configure application mock to fail
-        mock_app_collection.insert_one.side_effect = Exception("Transaction failed")
+        mock_app_collection.insert_one = AsyncMock(side_effect=Exception("Transaction failed"))
         
         # Submit an application with a PDF
         jobs_payload = json.dumps({"jobs": test_jobs})
