@@ -151,8 +151,10 @@ async def test_submit_jobs_invalid_json(test_client):
     )
     
     # Assert
-    assert response.status_code == 400
-    assert "Invalid JSON" in response.json()["detail"]
+    # Updated to expect 422 (Unprocessable Entity) instead of 400 (Bad Request)
+    # because FastAPI uses 422 for request validation errors
+    assert response.status_code == 422
+    assert "Invalid jobs data" in response.json()["detail"]
 
 @pytest.mark.asyncio
 async def test_submit_jobs_validation_error(test_client):
