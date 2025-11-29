@@ -7,10 +7,8 @@ Provides:
 - Automatic cleanup of disconnected clients
 """
 import asyncio
-import json
-from datetime import datetime
-from typing import Optional
 from collections import defaultdict
+from datetime import datetime
 
 from fastapi import WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
@@ -123,8 +121,8 @@ class ConnectionManager:
         user_id: str,
         application_id: str,
         status: str,
-        job_count: Optional[int] = None,
-        error_reason: Optional[str] = None
+        job_count: int | None = None,
+        error_reason: str | None = None
     ) -> int:
         """
         Send an application status update to a user.
@@ -193,7 +191,7 @@ class ConnectionManager:
         """Send a JSON message through a WebSocket."""
         await websocket.send_json(message)
 
-    def get_connection_count(self, user_id: Optional[str] = None) -> int:
+    def get_connection_count(self, user_id: str | None = None) -> int:
         """
         Get the number of active connections.
 
@@ -239,7 +237,7 @@ async def handle_websocket(websocket: WebSocket, user_id: str) -> None:
                 if data == "ping":
                     await websocket.send_text("pong")
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 # Send keepalive ping
                 try:
                     await websocket.send_json({

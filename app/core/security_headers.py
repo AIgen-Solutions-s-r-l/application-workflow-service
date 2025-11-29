@@ -4,7 +4,7 @@ Security headers middleware for HTTP response hardening.
 Implements OWASP security headers recommendations to protect against
 common web vulnerabilities.
 """
-from typing import Callable
+from collections.abc import Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware

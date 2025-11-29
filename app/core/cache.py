@@ -6,19 +6,17 @@ Provides:
 - Async-compatible caching decorators
 - Cache statistics for monitoring
 """
-import asyncio
 import hashlib
 import json
 import time
 from collections import OrderedDict
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, ParamSpec
 from threading import Lock
+from typing import Any, ParamSpec, TypeVar
 
-from app.core.config import settings
 from app.log.logging import logger
-
 
 P = ParamSpec("P")
 T = TypeVar("T")
@@ -105,7 +103,7 @@ class LRUCache:
         )
         return hashlib.sha256(key_data.encode()).hexdigest()[:32]
 
-    def get(self, key: str) -> Optional[Any]:
+    def get(self, key: str) -> Any | None:
         """
         Get a value from cache.
 
@@ -135,7 +133,7 @@ class LRUCache:
             self._stats.hits += 1
             return entry.value
 
-    def set(self, key: str, value: Any, ttl: Optional[float] = None) -> None:
+    def set(self, key: str, value: Any, ttl: float | None = None) -> None:
         """
         Set a value in cache.
 
@@ -225,7 +223,7 @@ class LRUCache:
         """
         with self._lock:
             keys_to_delete = [
-                key for key in self._cache.keys()
+                key for key in self._cache
                 if key.startswith(pattern)
             ]
 
@@ -252,7 +250,7 @@ user_cache = LRUCache(
 
 def cached(
     cache: LRUCache,
-    ttl: Optional[float] = None,
+    ttl: float | None = None,
     key_prefix: str = ""
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
@@ -292,7 +290,7 @@ def cached(
 
 def async_cached(
     cache: LRUCache,
-    ttl: Optional[float] = None,
+    ttl: float | None = None,
     key_prefix: str = ""
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """

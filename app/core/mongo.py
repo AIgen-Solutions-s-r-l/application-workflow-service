@@ -6,6 +6,7 @@ This module centralizes MongoDB connection setup and provides
 access to all database collections used by the application.
 """
 from motor.motor_asyncio import AsyncIOMotorClient
+
 from app.core.config import settings
 
 # Load MongoDB settings

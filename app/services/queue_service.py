@@ -5,12 +5,11 @@ This module handles publishing application data to RabbitMQ for
 asynchronous processing by the ApplicationWorker.
 """
 from datetime import datetime
-from typing import Optional
 
 from app.core.config import settings
+from app.core.correlation import add_correlation_to_message, get_correlation_id
+from app.core.metrics import record_dlq_message, record_queue_publish
 from app.core.rabbitmq_client import AsyncRabbitMQClient
-from app.core.correlation import get_correlation_id, add_correlation_to_message
-from app.core.metrics import record_queue_publish, record_dlq_message
 from app.log.logging import logger
 
 
@@ -20,7 +19,7 @@ class ApplicationQueueService:
     """
 
     def __init__(self):
-        self._client: Optional[AsyncRabbitMQClient] = None
+        self._client: AsyncRabbitMQClient | None = None
 
     async def _get_client(self) -> AsyncRabbitMQClient:
         """Get or create the RabbitMQ client."""
@@ -34,8 +33,8 @@ class ApplicationQueueService:
         application_id: str,
         user_id: str,
         job_count: int,
-        cv_id: Optional[str] = None,
-        style: Optional[str] = None
+        cv_id: str | None = None,
+        style: str | None = None
     ) -> bool:
         """
         Publish an application to the processing queue.

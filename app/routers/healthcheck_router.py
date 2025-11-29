@@ -7,15 +7,14 @@ Provides:
 - /health/ready: Readiness probe (can the service handle traffic?)
 """
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.core.config import settings
 from app.routers.healthchecks.fastapi_healthcheck import HealthCheckFactory, healthCheckRoute
 from app.routers.healthchecks.fastapi_healthcheck_mongodb import HealthCheckMongoDB
 from app.routers.healthchecks.fastapi_healthcheck_rabbitmq import HealthCheckRabbitMQ
-from app.core.config import settings
 
 router = APIRouter(tags=["healthcheck"])
 
@@ -24,8 +23,8 @@ class DependencyStatus(BaseModel):
     """Status of a single dependency."""
     name: str
     status: str  # "healthy", "unhealthy", "degraded"
-    latency_ms: Optional[float] = None
-    message: Optional[str] = None
+    latency_ms: float | None = None
+    message: str | None = None
 
 
 class HealthResponse(BaseModel):

@@ -1,9 +1,9 @@
 # app/core/auth.py
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.security import verify_jwt_token
+
 #from app.models.user import User
 #from app.services.user_service import get_user_by_username
 
@@ -25,5 +25,5 @@ async def get_current_user(
             raise credentials_exception
     except Exception:
         raise credentials_exception
-    
+
     return int(user_id)

@@ -8,10 +8,9 @@ Provides structured logging for:
 - Administrative actions
 """
 import json
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
-from dataclasses import dataclass, asdict
 
 from app.core.correlation import get_correlation_id
 from app.log.logging import logger
@@ -67,17 +66,17 @@ class AuditEvent:
     """Structured audit event."""
     event_type: AuditEventType
     timestamp: str
-    correlation_id: Optional[str]
-    user_id: Optional[str]
-    ip_address: Optional[str]
-    user_agent: Optional[str]
-    resource_type: Optional[str]
-    resource_id: Optional[str]
+    correlation_id: str | None
+    user_id: str | None
+    ip_address: str | None
+    user_agent: str | None
+    resource_type: str | None
+    resource_id: str | None
     action: str
     outcome: str  # "success" or "failure"
     severity: AuditSeverity
-    details: Optional[dict]
-    error_message: Optional[str]
+    details: dict | None
+    error_message: str | None
 
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization."""
@@ -125,13 +124,13 @@ class AuditLogger:
         action: str,
         outcome: str = "success",
         severity: AuditSeverity = AuditSeverity.INFO,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        details: Optional[dict] = None,
-        error_message: Optional[str] = None
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        details: dict | None = None,
+        error_message: str | None = None
     ) -> AuditEvent:
         """Create an audit event."""
         return AuditEvent(
@@ -154,8 +153,8 @@ class AuditLogger:
     def log_auth_success(
         self,
         user_id: str,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        ip_address: str | None = None,
+        user_agent: str | None = None
     ) -> None:
         """Log successful authentication."""
         event = self._create_event(
@@ -169,10 +168,10 @@ class AuditLogger:
 
     def log_auth_failure(
         self,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None,
-        reason: Optional[str] = None
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        reason: str | None = None
     ) -> None:
         """Log failed authentication attempt."""
         event = self._create_event(
@@ -189,8 +188,8 @@ class AuditLogger:
 
     def log_token_invalid(
         self,
-        ip_address: Optional[str] = None,
-        reason: Optional[str] = None
+        ip_address: str | None = None,
+        reason: str | None = None
     ) -> None:
         """Log invalid token usage."""
         event = self._create_event(
@@ -209,8 +208,8 @@ class AuditLogger:
         user_id: str,
         resource_type: str,
         resource_id: str,
-        reason: Optional[str] = None,
-        ip_address: Optional[str] = None
+        reason: str | None = None,
+        ip_address: str | None = None
     ) -> None:
         """Log access denied event."""
         event = self._create_event(
@@ -232,7 +231,7 @@ class AuditLogger:
         user_id: str,
         application_id: str,
         job_count: int,
-        ip_address: Optional[str] = None
+        ip_address: str | None = None
     ) -> None:
         """Log application creation."""
         event = self._create_event(
@@ -268,7 +267,7 @@ class AuditLogger:
         self,
         user_id: str,
         application_id: str,
-        ip_address: Optional[str] = None
+        ip_address: str | None = None
     ) -> None:
         """Log application data access."""
         event = self._create_event(
@@ -286,7 +285,7 @@ class AuditLogger:
         self,
         user_id: str,
         resume_id: str,
-        ip_address: Optional[str] = None
+        ip_address: str | None = None
     ) -> None:
         """Log resume upload."""
         event = self._create_event(
@@ -302,9 +301,9 @@ class AuditLogger:
     # Security events
     def log_rate_limit_exceeded(
         self,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        endpoint: Optional[str] = None
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        endpoint: str | None = None
     ) -> None:
         """Log rate limit exceeded."""
         event = self._create_event(
@@ -320,10 +319,10 @@ class AuditLogger:
 
     def log_input_validation_failed(
         self,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
-        field: Optional[str] = None,
-        reason: Optional[str] = None
+        user_id: str | None = None,
+        ip_address: str | None = None,
+        field: str | None = None,
+        reason: str | None = None
     ) -> None:
         """Log input validation failure."""
         event = self._create_event(
@@ -340,10 +339,10 @@ class AuditLogger:
 
     def log_suspicious_activity(
         self,
-        user_id: Optional[str] = None,
-        ip_address: Optional[str] = None,
+        user_id: str | None = None,
+        ip_address: str | None = None,
         description: str = "",
-        details: Optional[dict] = None
+        details: dict | None = None
     ) -> None:
         """Log suspicious activity."""
         event = self._create_event(

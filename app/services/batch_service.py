@@ -9,18 +9,14 @@ Provides:
 import asyncio
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.core.config import settings
-from app.core.mongo import applications_collection
 from app.core.websocket_manager import ws_manager
-from app.models.application import ApplicationStatus
+from app.log.logging import logger
 from app.services.application_uploader_service import ApplicationUploaderService
 from app.services.notification_service import NotificationPublisher
-from app.log.logging import logger
 
 
 class BatchStatus(str, Enum):
@@ -35,15 +31,15 @@ class BatchStatus(str, Enum):
 class BatchItem(BaseModel):
     """A single item in a batch submission."""
     jobs: list[dict]
-    style: Optional[str] = None
+    style: str | None = None
 
 
 class BatchResult(BaseModel):
     """Result of a single batch item processing."""
     index: int
-    application_id: Optional[str] = None
+    application_id: str | None = None
     status: str
-    error: Optional[str] = None
+    error: str | None = None
 
 
 class BatchResponse(BaseModel):
@@ -65,7 +61,7 @@ class BatchStatusResponse(BaseModel):
     failed: int
     results: list[BatchResult]
     created_at: datetime
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
 
 
 # In-memory batch tracking (consider moving to Redis for production)
@@ -85,7 +81,7 @@ class BatchService:
         self,
         user_id: str,
         items: list[BatchItem],
-        cv_id: Optional[str] = None
+        cv_id: str | None = None
     ) -> BatchResponse:
         """
         Create and start processing a batch of applications.
@@ -131,7 +127,7 @@ class BatchService:
         batch_id: str,
         user_id: str,
         items: list[BatchItem],
-        cv_id: Optional[str]
+        cv_id: str | None
     ) -> None:
         """
         Process batch items in background.
@@ -230,7 +226,7 @@ class BatchService:
         self,
         batch_id: str,
         user_id: str
-    ) -> Optional[BatchStatusResponse]:
+    ) -> BatchStatusResponse | None:
         """
         Get the status of a batch.
 

@@ -5,10 +5,10 @@ This module provides per-user rate limiting to protect against abuse
 while maintaining good UX for legitimate users.
 """
 import time
-from typing import Optional, Callable
+from collections.abc import Callable
 from datetime import datetime
 
-from fastapi import Request, HTTPException, status
+from fastapi import HTTPException, Request, status
 from fastapi.responses import JSONResponse
 
 from app.core.config import settings

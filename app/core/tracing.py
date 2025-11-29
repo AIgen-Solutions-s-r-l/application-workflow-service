@@ -8,8 +8,8 @@ Provides:
 - Export to various backends (Jaeger, OTLP, etc.)
 """
 import os
-from typing import Optional
 from contextlib import contextmanager
+from typing import Optional
 
 from app.core.config import settings
 from app.log.logging import logger
@@ -17,12 +17,12 @@ from app.log.logging import logger
 # Check if OpenTelemetry is available
 try:
     from opentelemetry import trace
+    from opentelemetry.propagate import set_global_textmap
+    from opentelemetry.sdk.resources import SERVICE_NAME, SERVICE_VERSION, Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
-    from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION
-    from opentelemetry.trace import Status, StatusCode, Span
+    from opentelemetry.trace import Status, StatusCode
     from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
-    from opentelemetry.propagate import set_global_textmap
 
     OTEL_AVAILABLE = True
 except ImportError:
@@ -146,7 +146,7 @@ def get_tracer() -> Optional["trace.Tracer"]:
 @contextmanager
 def create_span(
     name: str,
-    attributes: Optional[dict] = None,
+    attributes: dict | None = None,
     kind: Optional["trace.SpanKind"] = None
 ):
     """
@@ -206,7 +206,7 @@ def record_exception(exception: Exception) -> None:
         span.set_status(Status(StatusCode.ERROR, str(exception)))
 
 
-def set_span_status(success: bool, message: Optional[str] = None) -> None:
+def set_span_status(success: bool, message: str | None = None) -> None:
     """
     Set the status of the current span.
 
@@ -272,8 +272,8 @@ def instrument_aiopika() -> None:
 
 # Decorator for tracing functions
 def traced(
-    name: Optional[str] = None,
-    attributes: Optional[dict] = None
+    name: str | None = None,
+    attributes: dict | None = None
 ):
     """
     Decorator to trace a function.
@@ -286,14 +286,14 @@ def traced(
         Decorated function.
     """
     def decorator(func):
-        import functools
         import asyncio
+        import functools
 
         span_name = name or func.__name__
 
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            with create_span(span_name, attributes) as span:
+            with create_span(span_name, attributes):
                 try:
                     result = await func(*args, **kwargs)
                     set_span_status(True)
@@ -304,7 +304,7 @@ def traced(
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            with create_span(span_name, attributes) as span:
+            with create_span(span_name, attributes):
                 try:
                     result = func(*args, **kwargs)
                     set_span_status(True)

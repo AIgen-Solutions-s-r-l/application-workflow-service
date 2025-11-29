@@ -1,9 +1,10 @@
 import logging
-from app.routers.healthchecks.fastapi_healthcheck.service import HealthCheckBase
-from app.routers.healthchecks.fastapi_healthcheck.enum import HealthCheckStatusEnum
-from app.routers.healthchecks.fastapi_healthcheck.domain import HealthCheckInterface
-from typing import List, Optional
+
 from pymongo import AsyncMongoClient
+
+from app.routers.healthchecks.fastapi_healthcheck.domain import HealthCheckInterface
+from app.routers.healthchecks.fastapi_healthcheck.enum import HealthCheckStatusEnum
+from app.routers.healthchecks.fastapi_healthcheck.service import HealthCheckBase
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class HealthCheckMongoDB(HealthCheckBase, HealthCheckInterface):
         self,
         connection_uri: str,
         alias: str,
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ) -> None:
         self._connection_uri = connection_uri
         self._alias = alias

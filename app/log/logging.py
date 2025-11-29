@@ -1,14 +1,16 @@
-import sys
+import inspect
+import logging
 import os
+import sys
 from logging import StreamHandler
+
 from datadog_api_client.v2 import ApiClient, Configuration
 from datadog_api_client.v2.api.logs_api import LogsApi
 from datadog_api_client.v2.model.content_encoding import ContentEncoding
 from datadog_api_client.v2.model.http_log import HTTPLog
 from datadog_api_client.v2.model.http_log_item import HTTPLogItem
 from loguru import logger as loguru_logger
-import logging
-import inspect
+
 
 class LogConfig:
     def __init__(self):
@@ -90,7 +92,7 @@ def init_logging():
     "<level>{level: <8}</level> | "
     "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level> | <level>{extra}</level>",
       level=logconfig.loglevel)
-        
+
         dd_api_key = os.getenv("DD_API_KEY")
 
         if dd_api_key and isinstance(dd_api_key, str) and len(dd_api_key) > 1:
@@ -98,8 +100,8 @@ def init_logging():
             loguru_logger.add(DatadogHandler(), level=logconfig.loglevel_dd)
         else:
             loguru_logger.warning("Datadog API key is not set or environment variable is invalid. Logging to console only.")
-        
-        
+
+
         return loguru_logger
     except Exception as e:
         print(f"Failed to initialize logging: {e}")
@@ -107,5 +109,5 @@ def init_logging():
         loguru_logger.remove()
         loguru_logger.add(sys.stdout, format="{time} | {level} | {message}", level="DEBUG")
         return loguru_logger
-    
+
 logger = init_logging()

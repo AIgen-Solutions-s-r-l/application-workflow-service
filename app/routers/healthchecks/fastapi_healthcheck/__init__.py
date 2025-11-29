@@ -1,2 +1,2 @@
-from .service import HealthCheckFactory
 from .route import healthCheckRoute
+from .service import HealthCheckFactory

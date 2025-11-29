@@ -1,7 +1,8 @@
 # app/services/pdf_resume_service.py
 
-from app.core.mongo import pdf_resumes_collection
 from app.core.exceptions import DatabaseOperationError
+from app.core.mongo import pdf_resumes_collection
+
 
 class PdfResumeService:
     """

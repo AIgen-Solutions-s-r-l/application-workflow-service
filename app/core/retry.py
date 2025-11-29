@@ -6,8 +6,9 @@ application processing, with configurable backoff and error classification.
 """
 import asyncio
 import functools
-from typing import Callable, Type, Tuple, Optional, Any
+from collections.abc import Callable
 from datetime import datetime
+from typing import Any
 
 from app.core.config import settings
 from app.log.logging import logger
@@ -67,8 +68,8 @@ async def retry_with_backoff(
     func: Callable,
     *args,
     max_retries: int = None,
-    retryable_exceptions: Tuple[Type[Exception], ...] = (RetryableError,),
-    on_retry: Optional[Callable[[int, Exception], Any]] = None,
+    retryable_exceptions: tuple[type[Exception], ...] = (RetryableError,),
+    on_retry: Callable[[int, Exception], Any] | None = None,
     **kwargs
 ) -> Any:
     """
@@ -147,7 +148,7 @@ async def retry_with_backoff(
 
     # Should not reach here, but just in case
     raise MaxRetriesExceededError(
-        f"Max retries exceeded",
+        "Max retries exceeded",
         last_error=last_error,
         attempts=max_attempts
     )
@@ -155,7 +156,7 @@ async def retry_with_backoff(
 
 def with_retry(
     max_retries: int = None,
-    retryable_exceptions: Tuple[Type[Exception], ...] = (RetryableError,)
+    retryable_exceptions: tuple[type[Exception], ...] = (RetryableError,)
 ):
     """
     Decorator to add retry logic with exponential backoff to async functions.

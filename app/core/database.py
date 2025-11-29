@@ -6,12 +6,10 @@ This module provides:
 - Index creation for query performance
 - Database health monitoring utilities
 """
-import asyncio
 from typing import Optional
-from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
-from pymongo import IndexModel, ASCENDING, DESCENDING
+from pymongo import ASCENDING, DESCENDING, IndexModel
 from pymongo.errors import OperationFailure
 
 from app.core.config import settings
@@ -24,8 +22,8 @@ class DatabaseManager:
     """
 
     _instance: Optional["DatabaseManager"] = None
-    _client: Optional[AsyncIOMotorClient] = None
-    _database: Optional[AsyncIOMotorDatabase] = None
+    _client: AsyncIOMotorClient | None = None
+    _database: AsyncIOMotorDatabase | None = None
     _indexes_created: bool = False
 
     def __new__(cls) -> "DatabaseManager":

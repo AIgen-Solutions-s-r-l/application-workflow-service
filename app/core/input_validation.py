@@ -6,13 +6,11 @@ Provides:
 - Validation helpers for common patterns
 - File upload validation
 """
-import re
 import html
-from typing import Optional
+import re
 from pathlib import Path
 
 from fastapi import HTTPException, UploadFile
-
 
 # Patterns for validation
 SAFE_STRING_PATTERN = re.compile(r'^[\w\s\-.,@#&()\'\"!?:;/\[\]{}+=*%$€£¥]+$', re.UNICODE)
@@ -117,7 +115,7 @@ def sanitize_html(value: str, max_length: int = 50000) -> str:
     return clean
 
 
-def detect_injection(value: str) -> Optional[str]:
+def detect_injection(value: str) -> str | None:
     """
     Detect potential injection attacks in input.
 

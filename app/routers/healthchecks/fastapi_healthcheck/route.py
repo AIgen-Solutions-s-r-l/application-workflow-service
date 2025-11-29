@@ -1,7 +1,10 @@
-from typing import Callable
+from collections.abc import Callable
+
 from starlette.responses import JSONResponse
-from .service import HealthCheckFactory
+
 from .enum import HealthCheckStatusEnum
+from .service import HealthCheckFactory
+
 
 async def healthCheckRoute(factory: HealthCheckFactory) -> Callable:
     """
@@ -10,11 +13,11 @@ async def healthCheckRoute(factory: HealthCheckFactory) -> Callable:
     When called, the endpoint method within, will be called and it will run the job bound to the factory.
     The results will be parsed and sent back to the requestor via JSON.
     """
-    
+
     _factory = factory
 
     async def endpoint() -> JSONResponse:
-        res = await _factory.check()    
+        res = await _factory.check()
         if res['status'] == HealthCheckStatusEnum.UNHEALTHY.value:
             return JSONResponse(content=res, status_code=500)
         return JSONResponse(content=res, status_code=200)

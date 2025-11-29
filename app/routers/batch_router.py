@@ -6,20 +6,13 @@ Provides endpoints for:
 - Batch status tracking
 - Batch cancellation
 """
-from datetime import datetime
-from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core.auth import get_current_user
 from app.core.exceptions import DatabaseOperationError
-from app.services.batch_service import (
-    batch_service,
-    BatchItem,
-    BatchResponse,
-    BatchStatusResponse
-)
+from app.services.batch_service import BatchItem, BatchResponse, BatchStatusResponse, batch_service
 from app.services.pdf_resume_service import PdfResumeService
 
 router = APIRouter(prefix="/batch", tags=["batch"])
@@ -49,7 +42,7 @@ class BatchSubmitRequest(BaseModel):
 )
 async def submit_batch(
     items: str = Form(..., description="JSON array of batch items"),
-    cv: Optional[UploadFile] = File(None, description="Optional shared PDF resume"),
+    cv: UploadFile | None = File(None, description="Optional shared PDF resume"),
     current_user=Depends(get_current_user)
 ):
     """

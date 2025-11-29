@@ -1,10 +1,13 @@
 # app/core/async_rabbitmq_client.py
 
-import json
-import aio_pika
 import asyncio
+import json
+from collections.abc import Callable
+
+import aio_pika
+
 from app.log.logging import logger
-from typing import Callable, Optional
+
 
 class AsyncRabbitMQClient:
     """
@@ -13,8 +16,8 @@ class AsyncRabbitMQClient:
 
     def __init__(self, rabbitmq_url: str) -> None:
         self.rabbitmq_url = rabbitmq_url
-        self.connection: Optional[aio_pika.RobustConnection] = None
-        self.channel: Optional[aio_pika.RobustChannel] = None
+        self.connection: aio_pika.RobustConnection | None = None
+        self.channel: aio_pika.RobustChannel | None = None
 
     async def connect(self) -> None:
         """Establishes a connection to RabbitMQ."""
@@ -68,8 +71,8 @@ class AsyncRabbitMQClient:
                 aio_pika.Message(
                     body=message_body,
                     delivery_mode=(
-                        aio_pika.DeliveryMode.PERSISTENT 
-                        if persistent 
+                        aio_pika.DeliveryMode.PERSISTENT
+                        if persistent
                         else aio_pika.DeliveryMode.NOT_PERSISTENT
                     ),
                 ),

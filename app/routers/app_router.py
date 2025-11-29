@@ -8,29 +8,30 @@ This module provides endpoints for:
 """
 import json
 from datetime import datetime
-from typing import Dict, List, Optional
 
-from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Query
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 
 from app.core.auth import get_current_user
 from app.core.exceptions import DatabaseOperationError
 from app.core.mongo import (
-    get_database,
+    failed_applications_collection,
     success_applications_collection,
-    failed_applications_collection
 )
 from app.log.logging import logger
+from app.models.application import (
+    ApplicationStatus,
+    ApplicationStatusResponse,
+    ApplicationSubmitResponse,
+)
 from app.models.job import JobData
-from app.models.application import ApplicationStatusResponse, ApplicationSubmitResponse, ApplicationStatus
 from app.schemas.app_jobs import (
     DetailedJobData,
-    JobApplicationRequest,
     FilterParams,
-    PaginationParams,
+    JobApplicationRequest,
+    PaginatedJobsResponse,
     PaginationInfo,
-    PaginatedJobsResponse
+    PaginationParams,
 )
 from app.services.application_uploader_service import ApplicationUploaderService
 from app.services.pdf_resume_service import PdfResumeService
@@ -56,8 +57,8 @@ pdf_resume_service = PdfResumeService()
 )
 async def submit_jobs_and_save_application(
     jobs: str = Form(...),
-    cv: Optional[UploadFile] = File(None),
-    style: Optional[str] = Form(None),
+    cv: UploadFile | None = File(None),
+    style: str | None = Form(None),
     current_user=Depends(get_current_user),
 ):
     """
@@ -251,9 +252,9 @@ async def fetch_user_doc_paginated(
     collection,
     user_id: str,
     limit: int = 20,
-    cursor: Optional[str] = None,
-    filters: Optional[FilterParams] = None
-) -> tuple[dict, bool, Optional[str], int]:
+    cursor: str | None = None,
+    filters: FilterParams | None = None
+) -> tuple[dict, bool, str | None, int]:
     """
     Fetch a user's document with pagination and filtering support.
 
@@ -317,8 +318,8 @@ async def fetch_user_doc_paginated(
 
 def parse_applications(
     doc: dict,
-    exclude_fields: Optional[List[str]] = None
-) -> Dict[str, JobData]:
+    exclude_fields: list[str] | None = None
+) -> dict[str, JobData]:
     """
     Parse document content into JobData dictionary.
 
@@ -366,12 +367,12 @@ def parse_applications(
 async def get_successful_applications(
     current_user=Depends(get_current_user),
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
-    cursor: Optional[str] = Query(default=None, description="Pagination cursor"),
-    portal: Optional[str] = Query(default=None, description="Filter by portal (e.g., LinkedIn)"),
-    company_name: Optional[str] = Query(default=None, description="Filter by company name"),
-    title: Optional[str] = Query(default=None, description="Filter by job title"),
-    date_from: Optional[datetime] = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: Optional[datetime] = Query(default=None, description="Filter until date (ISO 8601)")
+    cursor: str | None = Query(default=None, description="Pagination cursor"),
+    portal: str | None = Query(default=None, description="Filter by portal (e.g., LinkedIn)"),
+    company_name: str | None = Query(default=None, description="Filter by company name"),
+    title: str | None = Query(default=None, description="Filter by job title"),
+    date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)")
 ):
     """
     Get paginated and filtered list of successful applications.
@@ -529,12 +530,12 @@ async def get_successful_application_details(
 async def get_failed_applications(
     current_user=Depends(get_current_user),
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
-    cursor: Optional[str] = Query(default=None, description="Pagination cursor"),
-    portal: Optional[str] = Query(default=None, description="Filter by portal (e.g., LinkedIn)"),
-    company_name: Optional[str] = Query(default=None, description="Filter by company name"),
-    title: Optional[str] = Query(default=None, description="Filter by job title"),
-    date_from: Optional[datetime] = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: Optional[datetime] = Query(default=None, description="Filter until date (ISO 8601)")
+    cursor: str | None = Query(default=None, description="Pagination cursor"),
+    portal: str | None = Query(default=None, description="Filter by portal (e.g., LinkedIn)"),
+    company_name: str | None = Query(default=None, description="Filter by company name"),
+    title: str | None = Query(default=None, description="Filter by job title"),
+    date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)")
 ):
     """
     Get paginated and filtered list of failed applications.

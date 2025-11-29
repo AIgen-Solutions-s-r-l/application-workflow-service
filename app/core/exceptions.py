@@ -7,7 +7,7 @@ This module provides:
 - Error codes for programmatic error handling
 """
 from datetime import datetime
-from typing import Optional, Any, Dict
+from typing import Any
 
 from fastapi import HTTPException, status
 from pydantic import BaseModel
@@ -65,7 +65,7 @@ class ErrorDetail(BaseModel):
     """Structured error detail for API responses."""
     code: str
     message: str
-    field: Optional[str] = None
+    field: str | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -73,10 +73,10 @@ class ErrorResponse(BaseModel):
     error: str  # Error class name
     code: str  # Error code for programmatic handling
     message: str  # Human-readable message
-    details: Optional[list[ErrorDetail]] = None  # Additional error details
-    correlation_id: Optional[str] = None  # Request correlation ID
+    details: list[ErrorDetail] | None = None  # Additional error details
+    correlation_id: str | None = None  # Request correlation ID
     timestamp: str  # ISO 8601 timestamp
-    path: Optional[str] = None  # Request path
+    path: str | None = None  # Request path
 
     @classmethod
     def create(
@@ -84,8 +84,8 @@ class ErrorResponse(BaseModel):
         error: str,
         code: str,
         message: str,
-        details: Optional[list[ErrorDetail]] = None,
-        path: Optional[str] = None
+        details: list[ErrorDetail] | None = None,
+        path: str | None = None
     ) -> "ErrorResponse":
         """Create an error response with current timestamp and correlation ID."""
         return cls(
@@ -108,8 +108,8 @@ class ApplicationManagerException(HTTPException):
         self,
         detail: str,
         status_code: int = status.HTTP_400_BAD_REQUEST,
-        error_code: Optional[str] = None,
-        details: Optional[list[ErrorDetail]] = None
+        error_code: str | None = None,
+        details: list[ErrorDetail] | None = None
     ):
         self.error_code = error_code or self.__class__.error_code
         error_response = ErrorResponse.create(
@@ -168,7 +168,7 @@ class ValidationError(ApplicationManagerException):
     """Raised when request validation fails."""
     error_code = ErrorCode.VALIDATION_ERROR
 
-    def __init__(self, message: str, details: Optional[list[ErrorDetail]] = None):
+    def __init__(self, message: str, details: list[ErrorDetail] | None = None):
         super().__init__(
             detail=message,
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -190,7 +190,7 @@ class InvalidJobDataError(ValidationError):
     """Raised when job data is invalid."""
     error_code = ErrorCode.JOB_INVALID_DATA
 
-    def __init__(self, message: str, field: Optional[str] = None):
+    def __init__(self, message: str, field: str | None = None):
         details = [ErrorDetail(code=self.error_code, message=message, field=field)] if field else None
         super().__init__(message=message, details=details)
 
@@ -323,7 +323,7 @@ class InsufficientPermissionsError(ApplicationManagerException):
     """Raised when user doesn't have required permissions."""
     error_code = ErrorCode.AUTH_INSUFFICIENT_PERMISSIONS
 
-    def __init__(self, required_permission: Optional[str] = None):
+    def __init__(self, required_permission: str | None = None):
         message = "Insufficient permissions"
         if required_permission:
             message += f": requires {required_permission}"
@@ -341,7 +341,7 @@ class DuplicateRequestError(ApplicationManagerException):
     """Raised when a duplicate request is detected."""
     error_code = ErrorCode.DUPLICATE_REQUEST
 
-    def __init__(self, idempotency_key: str, existing_result: Optional[Dict] = None):
+    def __init__(self, idempotency_key: str, existing_result: dict | None = None):
         self.existing_result = existing_result
         super().__init__(
             detail=f"Duplicate request detected for idempotency key: {idempotency_key}",

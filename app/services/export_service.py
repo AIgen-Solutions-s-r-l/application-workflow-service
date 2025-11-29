@@ -8,10 +8,10 @@ Provides:
 """
 import csv
 import io
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import AsyncGenerator, Optional
 
-from app.core.mongo import success_applications_collection, failed_applications_collection
+from app.core.mongo import failed_applications_collection, success_applications_collection
 from app.log.logging import logger
 
 
@@ -50,9 +50,9 @@ class ExportService:
         user_id: str,
         include_successful: bool = True,
         include_failed: bool = True,
-        portal_filter: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        portal_filter: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
     ) -> str:
         """
         Export applications to CSV format.
@@ -105,9 +105,9 @@ class ExportService:
         user_id: str,
         include_successful: bool = True,
         include_failed: bool = True,
-        portal_filter: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        portal_filter: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
     ) -> AsyncGenerator[str, None]:
         """
         Stream applications as CSV for large datasets.
@@ -164,9 +164,9 @@ class ExportService:
         user_id: str,
         include_successful: bool = True,
         include_failed: bool = True,
-        portal_filter: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        portal_filter: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
     ) -> bytes:
         """
         Export applications to Excel format.
@@ -184,7 +184,7 @@ class ExportService:
         """
         try:
             import openpyxl
-            from openpyxl.styles import Font, PatternFill, Alignment
+            from openpyxl.styles import Alignment, Font, PatternFill
             from openpyxl.utils import get_column_letter
         except ImportError:
             logger.warning("openpyxl not installed, falling back to CSV")
@@ -270,9 +270,9 @@ class ExportService:
         user_id: str,
         collection,
         status: str,
-        portal_filter: Optional[str] = None,
-        date_from: Optional[datetime] = None,
-        date_to: Optional[datetime] = None
+        portal_filter: str | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None
     ) -> AsyncGenerator[list, None]:
         """
         Fetch applications from a collection and yield rows.
@@ -365,7 +365,7 @@ class ExportService:
             "total_applications": success_count + failed_count,
             "successful_applications": success_count,
             "failed_applications": failed_count,
-            "available_portals": sorted(list(portals)),
+            "available_portals": sorted(portals),
             "export_formats": ["csv", "excel"]
         }
 

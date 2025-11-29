@@ -7,10 +7,9 @@ Provides endpoints for:
 - Export summary
 """
 from datetime import datetime
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse, Response
+from fastapi.responses import Response, StreamingResponse
 
 from app.core.auth import get_current_user
 from app.services.export_service import export_service
@@ -50,9 +49,9 @@ async def export_csv(
     current_user=Depends(get_current_user),
     include_successful: bool = Query(default=True, description="Include successful applications"),
     include_failed: bool = Query(default=True, description="Include failed applications"),
-    portal: Optional[str] = Query(default=None, description="Filter by portal"),
-    date_from: Optional[datetime] = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: Optional[datetime] = Query(default=None, description="Filter until date (ISO 8601)"),
+    portal: str | None = Query(default=None, description="Filter by portal"),
+    date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)"),
     stream: bool = Query(default=False, description="Use streaming for large exports")
 ):
     """
@@ -125,9 +124,9 @@ async def export_excel(
     current_user=Depends(get_current_user),
     include_successful: bool = Query(default=True, description="Include successful applications"),
     include_failed: bool = Query(default=True, description="Include failed applications"),
-    portal: Optional[str] = Query(default=None, description="Filter by portal"),
-    date_from: Optional[datetime] = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: Optional[datetime] = Query(default=None, description="Filter until date (ISO 8601)")
+    portal: str | None = Query(default=None, description="Filter by portal"),
+    date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)")
 ):
     """
     Export applications to Excel format.

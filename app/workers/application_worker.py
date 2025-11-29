@@ -4,11 +4,9 @@ Application Worker for processing job applications asynchronously.
 This worker consumes messages from the application processing queue,
 processes each application, and updates its status accordingly.
 """
-import json
 import asyncio
+import json
 import signal
-from datetime import datetime
-from typing import Optional
 
 import aio_pika
 
@@ -16,16 +14,16 @@ from app.core.config import settings
 from app.core.mongo import applications_collection
 from app.core.rabbitmq_client import AsyncRabbitMQClient
 from app.core.retry import (
-    RetryableError,
-    NonRetryableError,
     MaxRetriesExceededError,
+    NonRetryableError,
+    RetryableError,
+    RetryContext,
     retry_with_backoff,
-    RetryContext
 )
+from app.log.logging import logger
 from app.models.application import ApplicationStatus
 from app.services.application_uploader_service import ApplicationUploaderService
 from app.services.queue_service import application_queue_service
-from app.log.logging import logger
 
 
 class ApplicationWorker:
@@ -40,7 +38,7 @@ class ApplicationWorker:
     """
 
     def __init__(self):
-        self._client: Optional[AsyncRabbitMQClient] = None
+        self._client: AsyncRabbitMQClient | None = None
         self._uploader = ApplicationUploaderService()
         self._running = False
         self._shutdown_event = asyncio.Event()
@@ -56,8 +54,8 @@ class ApplicationWorker:
         self,
         application_id: str,
         user_id: str,
-        cv_id: Optional[str] = None,
-        style: Optional[str] = None
+        cv_id: str | None = None,  # noqa: ARG002
+        style: str | None = None,  # noqa: ARG002
     ) -> None:
         """
         Process a single application.
@@ -202,7 +200,7 @@ class ApplicationWorker:
                         style=style,
                         max_retries=settings.max_retries,
                         retryable_exceptions=(RetryableError,),
-                        on_retry=lambda attempt, err: ctx.record_error(err)
+                        on_retry=lambda _attempt, err: ctx.record_error(err)
                     )
                     await message.ack()
 

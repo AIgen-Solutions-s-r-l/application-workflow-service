@@ -3,13 +3,16 @@ Request and response schemas for job application endpoints.
 """
 import base64
 import json
-from typing import Any, Dict, Generic, List, Optional, TypeVar
 from datetime import datetime
-from pydantic import BaseModel, Field, field_validator
+from typing import Any, Generic, TypeVar
 
+from pydantic import BaseModel, Field
+
+from app.models.application import (
+    ApplicationStatusResponse,
+    ApplicationSubmitResponse,
+)
 from app.models.job import JobData
-from app.models.application import ApplicationStatus, ApplicationStatusResponse, ApplicationSubmitResponse
-
 
 # Re-export for backward compatibility
 __all__ = [
@@ -38,31 +41,31 @@ class DetailedJobData(BaseModel):
     """
     Response model for detailed job information including resume and cover letter.
     """
-    resume_optimized: Optional[Dict[str, Any]] = None
-    cover_letter: Optional[Dict[str, Any]] = None
+    resume_optimized: dict[str, Any] | None = None
+    cover_letter: dict[str, Any] | None = None
 
 
 class FilterParams(BaseModel):
     """
     Parameters for filtering list endpoints.
     """
-    portal: Optional[str] = Field(
+    portal: str | None = Field(
         default=None,
         description="Filter by job portal (e.g., 'LinkedIn', 'Indeed')"
     )
-    company_name: Optional[str] = Field(
+    company_name: str | None = Field(
         default=None,
         description="Filter by company name (partial match)"
     )
-    title: Optional[str] = Field(
+    title: str | None = Field(
         default=None,
         description="Filter by job title (partial match)"
     )
-    date_from: Optional[datetime] = Field(
+    date_from: datetime | None = Field(
         default=None,
         description="Filter applications from this date (ISO 8601)"
     )
-    date_to: Optional[datetime] = Field(
+    date_to: datetime | None = Field(
         default=None,
         description="Filter applications until this date (ISO 8601)"
     )
@@ -78,7 +81,7 @@ class PaginationParams(BaseModel):
         le=100,
         description="Number of items to return (1-100)"
     )
-    cursor: Optional[str] = Field(
+    cursor: str | None = Field(
         default=None,
         description="Cursor for pagination (base64 encoded)"
     )
@@ -100,7 +103,7 @@ class PaginationParams(BaseModel):
         ).decode()
 
     @staticmethod
-    def decode_cursor(cursor: str) -> Optional[Dict[str, str]]:
+    def decode_cursor(cursor: str) -> dict[str, str] | None:
         """
         Decode a cursor to get the last document ID.
 
@@ -122,9 +125,9 @@ class PaginationInfo(BaseModel):
     Pagination metadata in response.
     """
     limit: int = Field(..., description="Number of items per page")
-    next_cursor: Optional[str] = Field(None, description="Cursor for next page")
+    next_cursor: str | None = Field(None, description="Cursor for next page")
     has_more: bool = Field(..., description="Whether more items exist")
-    total_count: Optional[int] = Field(None, description="Total count of items (if available)")
+    total_count: int | None = Field(None, description="Total count of items (if available)")
 
 
 # Generic type for paginated data
@@ -135,7 +138,7 @@ class PaginatedResponse(BaseModel, Generic[T]):
     """
     Generic paginated response wrapper.
     """
-    data: Dict[str, Any] = Field(..., description="Paginated data keyed by ID")
+    data: dict[str, Any] = Field(..., description="Paginated data keyed by ID")
     pagination: PaginationInfo = Field(..., description="Pagination metadata")
 
     class Config:
@@ -146,5 +149,5 @@ class PaginatedJobsResponse(BaseModel):
     """
     Paginated response for job applications.
     """
-    data: Dict[str, JobData] = Field(..., description="Job applications keyed by ID")
+    data: dict[str, JobData] = Field(..., description="Job applications keyed by ID")
     pagination: PaginationInfo = Field(..., description="Pagination metadata")

@@ -5,8 +5,8 @@ Provides WebSocket endpoints for:
 - Application status updates
 - Batch processing progress
 """
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Query, HTTPException
-from jose import jwt, JWTError
+from fastapi import APIRouter, HTTPException, Query, WebSocket
+from jose import JWTError, jwt
 
 from app.core.config import settings
 from app.core.websocket_manager import handle_websocket, ws_manager

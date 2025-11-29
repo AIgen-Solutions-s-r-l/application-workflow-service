@@ -5,11 +5,10 @@ This module provides enriched notification payloads for downstream consumers,
 replacing the basic {"updated": true} format with structured event data.
 """
 from datetime import datetime
-from typing import Optional
 
+from app.core.config import settings
 from app.log.logging import logger
 from app.services.base_publisher import BasePublisher
-from app.core.config import settings
 
 
 class NotificationPublisher(BasePublisher):
@@ -63,8 +62,8 @@ class NotificationPublisher(BasePublisher):
         user_id: str,
         status: str,
         job_count: int,
-        previous_status: Optional[str] = None,
-        error_reason: Optional[str] = None
+        previous_status: str | None = None,
+        error_reason: str | None = None
     ) -> None:
         """
         Publish notification when application status changes.
@@ -120,8 +119,8 @@ class NotificationPublisher(BasePublisher):
         user_id: str,
         status: str,
         job_count: int,
-        previous_status: Optional[str] = None,
-        error_reason: Optional[str] = None
+        previous_status: str | None = None,
+        error_reason: str | None = None
     ) -> dict:
         """
         Build a standardized event payload.

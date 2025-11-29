@@ -7,20 +7,18 @@ This module provides:
 - Request fingerprinting for automatic deduplication
 """
 import hashlib
-import json
 import time
+from collections.abc import Callable
 from datetime import datetime, timedelta
-from typing import Optional, Dict, Any, Callable
 from functools import wraps
+from typing import Any
 
-from fastapi import Request, Response
+from fastapi import Request
 from pydantic import BaseModel
 
-from app.core.config import settings
 from app.core.correlation import get_correlation_id
 from app.core.exceptions import DuplicateRequestError
 from app.log.logging import logger
-
 
 # Header name for idempotency key
 IDEMPOTENCY_KEY_HEADER = "X-Idempotency-Key"
@@ -33,11 +31,11 @@ class IdempotencyRecord(BaseModel):
     """Record of an idempotent request."""
     key: str
     status: str  # "pending", "completed", "failed"
-    response: Optional[Dict[str, Any]] = None
-    status_code: Optional[int] = None
+    response: dict[str, Any] | None = None
+    status_code: int | None = None
     created_at: datetime
-    completed_at: Optional[datetime] = None
-    correlation_id: Optional[str] = None
+    completed_at: datetime | None = None
+    correlation_id: str | None = None
 
 
 class InMemoryIdempotencyStore:
@@ -49,7 +47,7 @@ class InMemoryIdempotencyStore:
     """
 
     def __init__(self, ttl_seconds: int = DEFAULT_TTL_SECONDS):
-        self._store: Dict[str, IdempotencyRecord] = {}
+        self._store: dict[str, IdempotencyRecord] = {}
         self._ttl_seconds = ttl_seconds
         self._cleanup_interval = 3600  # Cleanup every hour
         self._last_cleanup = time.time()
@@ -78,7 +76,7 @@ class InMemoryIdempotencyStore:
 
         self._last_cleanup = now
 
-    def get(self, key: str) -> Optional[IdempotencyRecord]:
+    def get(self, key: str) -> IdempotencyRecord | None:
         """
         Get an idempotency record by key.
 
@@ -133,7 +131,7 @@ class InMemoryIdempotencyStore:
     def set_completed(
         self,
         key: str,
-        response: Dict[str, Any],
+        response: dict[str, Any],
         status_code: int
     ) -> None:
         """
@@ -211,8 +209,8 @@ def get_idempotency_store() -> InMemoryIdempotencyStore:
 def generate_request_fingerprint(
     method: str,
     path: str,
-    body: Optional[bytes] = None,
-    user_id: Optional[str] = None
+    body: bytes | None = None,
+    user_id: str | None = None
 ) -> str:
     """
     Generate a fingerprint for a request.
@@ -238,7 +236,7 @@ def generate_request_fingerprint(
     return hashlib.sha256(fingerprint.encode()).hexdigest()
 
 
-def get_idempotency_key(request: Request) -> Optional[str]:
+def get_idempotency_key(request: Request) -> str | None:
     """
     Extract idempotency key from request headers.
 

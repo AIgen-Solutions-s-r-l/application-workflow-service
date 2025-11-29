@@ -8,23 +8,22 @@ This module provides metrics collection for:
 - Rate limiting metrics
 """
 import time
-from typing import Callable, Optional
+from collections.abc import Callable
 from functools import wraps
 
+from fastapi import Request, Response
 from prometheus_client import (
+    CONTENT_TYPE_LATEST,
+    REGISTRY,
     Counter,
-    Histogram,
     Gauge,
+    Histogram,
     Info,
     generate_latest,
-    CONTENT_TYPE_LATEST,
-    REGISTRY
 )
-from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import settings
-
 
 # =============================================================================
 # Service Info
@@ -201,7 +200,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
             status_code = str(response.status_code)
-        except Exception as e:
+        except Exception:
             status_code = "500"
             raise
         finally:
@@ -231,7 +230,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         parts = path.strip('/').split('/')
         normalized = []
 
-        for i, part in enumerate(parts):
+        for _i, part in enumerate(parts):
             # Check if this looks like an ID (ObjectId or UUID-like)
             if len(part) == 24 or len(part) == 36 or (len(part) > 8 and '-' in part):
                 normalized.append('{id}')
@@ -262,7 +261,7 @@ def track_db_operation(operation: str, collection: str):
             try:
                 result = await func(*args, **kwargs)
                 return result
-            except Exception as e:
+            except Exception:
                 status = 'error'
                 raise
             finally:

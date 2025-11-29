@@ -8,17 +8,16 @@ This module provides correlation IDs that propagate through:
 - Database operations
 """
 import uuid
+from collections.abc import Callable
 from contextvars import ContextVar
-from typing import Optional, Callable
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.log.logging import logger
 
-
 # Context variable to store correlation ID for the current request
-correlation_id_var: ContextVar[Optional[str]] = ContextVar('correlation_id', default=None)
+correlation_id_var: ContextVar[str | None] = ContextVar('correlation_id', default=None)
 
 # Header names for correlation ID
 CORRELATION_ID_HEADER = "X-Correlation-ID"
@@ -30,7 +29,7 @@ def generate_correlation_id() -> str:
     return str(uuid.uuid4())
 
 
-def get_correlation_id() -> Optional[str]:
+def get_correlation_id() -> str | None:
     """
     Get the current correlation ID.
 
@@ -147,7 +146,7 @@ def add_correlation_to_message(message: dict) -> dict:
     return message
 
 
-def extract_correlation_from_message(message: dict) -> Optional[str]:
+def extract_correlation_from_message(message: dict) -> str | None:
     """
     Extract and set correlation ID from a queue message.
 

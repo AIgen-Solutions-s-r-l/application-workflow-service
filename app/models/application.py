@@ -4,12 +4,10 @@ Application models for job application workflow.
 This module defines the core data models for tracking application status
 throughout the processing lifecycle.
 """
-from enum import Enum
-from typing import Optional, List
 from datetime import datetime
-from pydantic import BaseModel, Field
+from enum import Enum
 
-from app.models.job import JobData
+from pydantic import BaseModel, Field
 
 
 class ApplicationStatus(str, Enum):
@@ -31,9 +29,9 @@ class Application(BaseModel):
     This model tracks the full lifecycle of a batch of job applications
     submitted by a user.
     """
-    id: Optional[str] = Field(None, alias="_id", description="MongoDB document ID")
+    id: str | None = Field(None, alias="_id", description="MongoDB document ID")
     user_id: str = Field(..., description="The ID of the user who submitted the application")
-    jobs: List[dict] = Field(default_factory=list, description="List of jobs to apply for")
+    jobs: list[dict] = Field(default_factory=list, description="List of jobs to apply for")
     status: ApplicationStatus = Field(
         default=ApplicationStatus.PENDING,
         description="Current status of the application batch"
@@ -48,7 +46,7 @@ class Application(BaseModel):
         default_factory=datetime.utcnow,
         description="Timestamp when the application was last updated"
     )
-    processed_at: Optional[datetime] = Field(
+    processed_at: datetime | None = Field(
         None,
         description="Timestamp when the application reached a terminal state (success/failed)"
     )
@@ -56,9 +54,9 @@ class Application(BaseModel):
     # Processing metadata
     sent: bool = Field(default=False, description="Whether the application has been sent for processing")
     retries_left: int = Field(default=5, description="Number of retry attempts remaining")
-    cv_id: Optional[str] = Field(None, description="Reference to uploaded CV document")
-    style: Optional[str] = Field(None, description="Resume style preference")
-    error_reason: Optional[str] = Field(
+    cv_id: str | None = Field(None, description="Reference to uploaded CV document")
+    style: str | None = Field(None, description="Resume style preference")
+    error_reason: str | None = Field(
         None,
         description="Error message if application failed"
     )
@@ -77,9 +75,9 @@ class ApplicationStatusResponse(BaseModel):
     status: ApplicationStatus = Field(..., description="Current status")
     created_at: datetime = Field(..., description="When the application was created")
     updated_at: datetime = Field(..., description="When the application was last updated")
-    processed_at: Optional[datetime] = Field(None, description="When processing completed")
+    processed_at: datetime | None = Field(None, description="When processing completed")
     job_count: int = Field(..., description="Number of jobs in this application")
-    error_reason: Optional[str] = Field(None, description="Error message if failed")
+    error_reason: str | None = Field(None, description="Error message if failed")
 
     class Config:
         use_enum_values = True

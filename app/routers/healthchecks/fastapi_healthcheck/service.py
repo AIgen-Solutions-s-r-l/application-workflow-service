@@ -1,46 +1,46 @@
-from .domain import HealthCheckInterface
-from .model import HealthCheckModel, HealthCheckEntityModel
-from .enum import HealthCheckStatusEnum
-from typing import List
 from datetime import datetime
+
+from .domain import HealthCheckInterface
+from .enum import HealthCheckStatusEnum
+from .model import HealthCheckEntityModel, HealthCheckModel
 
 
 class HealthCheckFactory:
-    _healthItems: List[HealthCheckInterface]
+    _healthItems: list[HealthCheckInterface]
     _health: HealthCheckModel
 
     def __init__(self) -> None:
-        self._healthItems = list()
+        self._healthItems = []
 
     def add(self, item: HealthCheckInterface) -> None:
         self._healthItems.append(item)
 
     def __startTimer__(self, entityTimer: bool) -> None:
-        if entityTimer == True:
+        if entityTimer:
             self._entityStartTime = datetime.now()
         else:
             self._totalStartTime = datetime.now()
 
     def __stopTimer__(self, entityTimer: bool) -> None:
-        if entityTimer == True:
+        if entityTimer:
             self._entityStopTime = datetime.now()
         else:
             self._totalStopTime = datetime.now()
 
     def __getTimeTaken__(self, entityTimer: bool) -> datetime:
-        if entityTimer == True:
+        if entityTimer:
             return self._entityStopTime - self._entityStartTime
         return self._totalStopTime - self._totalStartTime
 
     async def __dumpModel__(self, model: HealthCheckModel) -> str:
         """This goes and convert python objects to something a json object."""
-        l = list()
+        entities_list = []
         for i in model.entities:
             i.status = i.status.value
             i.timeTaken = str(i.timeTaken)
-            l.append(dict(i))
+            entities_list.append(dict(i))
 
-        model.entities = l
+        model.entities = entities_list
         model.status = model.status.value
         model.totalTimeTaken = str(model.totalTimeTaken)
 
@@ -52,7 +52,7 @@ class HealthCheckFactory:
         for i in self._healthItems:
             # Generate the model
             if not hasattr(i, "_tags"):
-                i._tags = list()
+                i._tags = []
             item = HealthCheckEntityModel(
                 alias=i._alias, tags=i._tags if i._tags else []
             )
@@ -93,7 +93,7 @@ class HealthCheckBase:
     def getService(self) -> str:
         return self._service
 
-    def getTags(self) -> List[str]:
+    def getTags(self) -> list[str]:
         return self._tags
 
     def getAlias(self) -> str:

@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+
 from .enum import HealthCheckStatusEnum
 
 
 class HealthCheckInterface(ABC):
     _connectionUri: str
     _alias: str
-    _tags: Optional[List[str]]
+    _tags: list[str] | None
 
     @abstractmethod
     def setConnectionUri(self, value: str) -> None:
@@ -24,7 +24,7 @@ class HealthCheckInterface(ABC):
         pass
 
     @abstractmethod
-    def getTags(self) -> List[str]:
+    def getTags(self) -> list[str]:
         pass
 
     @abstractmethod

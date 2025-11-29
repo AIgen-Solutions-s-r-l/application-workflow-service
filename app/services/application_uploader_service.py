@@ -2,15 +2,13 @@
 Application uploader service for managing job application submissions.
 """
 from datetime import datetime
-from typing import Optional
 
 from app.core.config import settings
-from app.core.mongo import applications_collection
 from app.core.exceptions import DatabaseOperationError
+from app.core.mongo import applications_collection
 from app.models.application import ApplicationStatus
 from app.services.notification_service import NotificationPublisher
 from app.services.queue_service import application_queue_service
-
 
 notification_publisher = NotificationPublisher()
 
@@ -94,7 +92,7 @@ class ApplicationUploaderService:
         self,
         application_id: str,
         status: ApplicationStatus,
-        error_reason: Optional[str] = None
+        error_reason: str | None = None
     ) -> bool:
         """
         Update the status of an application.
@@ -157,7 +155,7 @@ class ApplicationUploaderService:
         self,
         application_id: str,
         user_id: str
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """
         Get the status of an application.
 
