@@ -24,35 +24,92 @@ A production-ready Python microservice for managing job application workflows. B
 
 ## Architecture
 
-```
-┌──────────────────┐     ┌─────────────────┐     ┌──────────────────┐
-│   FastAPI App    │────▶│    RabbitMQ     │────▶│  Application     │
-│   (REST API)     │     │    (Queues)     │     │    Worker        │
-└────────┬─────────┘     └─────────────────┘     └────────┬─────────┘
-         │                                                 │
-         │              ┌─────────────────┐               │
-         └─────────────▶│    MongoDB      │◀──────────────┘
-                        │   (Storage)     │
-                        └─────────────────┘
+```mermaid
+flowchart LR
+    subgraph Client
+        A[HTTP Client]
+    end
+
+    subgraph API["FastAPI Application"]
+        B[REST API]
+        C[Middlewares]
+    end
+
+    subgraph Queue["Message Broker"]
+        D[(RabbitMQ)]
+        E[Processing Queue]
+        F[DLQ]
+    end
+
+    subgraph Worker["Background Processing"]
+        G[Application Worker]
+    end
+
+    subgraph Storage["Data Layer"]
+        H[(MongoDB)]
+    end
+
+    A -->|Request| B
+    B --> C
+    C -->|Publish| D
+    D --> E
+    E -->|Consume| G
+    G -->|Failed| F
+    B -->|Read/Write| H
+    G -->|Update Status| H
 ```
 
 ### Application Lifecycle
 
+```mermaid
+stateDiagram-v2
+    [*] --> Pending: Submit Application
+    Pending --> Processing: Worker picks up
+    Processing --> Success: Completed
+    Processing --> Failed: Error
+    Success --> [*]
+    Failed --> [*]
+
+    note right of Pending
+        Application queued
+        for processing
+    end note
+
+    note right of Processing
+        Worker actively
+        processing jobs
+    end note
 ```
-                 ┌─────────┐
-    Submit ───▶  │ PENDING │
-                 └────┬────┘
-                      │ Worker picks up
-                      ▼
-                 ┌────────────┐
-                 │ PROCESSING │
-                 └──────┬─────┘
-                        │
-           ┌────────────┴────────────┐
-           ▼                         ▼
-      ┌─────────┐              ┌────────┐
-      │ SUCCESS │              │ FAILED │
-      └─────────┘              └────────┘
+
+### Request Flow
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as FastAPI
+    participant RMQ as RabbitMQ
+    participant W as Worker
+    participant DB as MongoDB
+
+    C->>API: POST /applications
+    API->>DB: Create application (pending)
+    API->>RMQ: Publish to queue
+    API-->>C: 200 OK (application_id)
+
+    RMQ->>W: Deliver message
+    W->>DB: Update status (processing)
+    W->>W: Process application
+
+    alt Success
+        W->>DB: Update status (success)
+    else Failure
+        W->>DB: Update status (failed)
+        W->>RMQ: Publish to DLQ
+    end
+
+    C->>API: GET /applications/{id}/status
+    API->>DB: Query status
+    API-->>C: 200 OK (status)
 ```
 
 ## Quick Start
