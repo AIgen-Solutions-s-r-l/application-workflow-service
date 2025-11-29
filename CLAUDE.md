@@ -545,6 +545,121 @@ Protected against:
 - Path traversal attacks
 - Dangerous file uploads
 
+## New Features
+
+### WebSocket Real-Time Updates (`app/core/websocket_manager.py`)
+
+Real-time status updates via WebSocket:
+
+```javascript
+// Connect with JWT token
+const ws = new WebSocket('ws://localhost:8009/ws/status?token=<jwt_token>');
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    // data.type: "connected", "status_update", "batch_update", "ping"
+    console.log(data);
+};
+
+// Keepalive
+ws.send("ping");  // Receives "pong"
+```
+
+Message types:
+- `connected`: Initial connection confirmation
+- `status_update`: Application status changed
+- `batch_update`: Batch processing progress
+- `ping`: Keepalive response
+
+### Batch Operations (`app/routers/batch_router.py`)
+
+Submit multiple applications at once:
+
+```bash
+POST /batch/applications
+Content-Type: multipart/form-data
+
+# items: JSON array of {jobs: [...], style: "..."}
+curl -X POST "http://localhost:8009/batch/applications" \
+  -H "Authorization: Bearer <token>" \
+  -F 'items=[{"jobs":[...],"style":"modern"},{"jobs":[...],"style":"classic"}]' \
+  -F 'cv=@shared_resume.pdf'
+
+# Response: {"batch_id": "...", "status": "pending", "total": 2}
+
+# Check batch status
+GET /batch/applications/{batch_id}
+
+# Cancel batch
+DELETE /batch/applications/{batch_id}
+```
+
+### Data Export (`app/routers/export_router.py`)
+
+Export applications to CSV or Excel:
+
+```bash
+# Get export summary
+GET /export/summary
+
+# Download CSV
+GET /export/csv?include_successful=true&include_failed=true&portal=LinkedIn
+
+# Download Excel (with formatting)
+GET /export/excel?date_from=2025-01-01&date_to=2025-12-31
+
+# Stream large exports
+GET /export/csv?stream=true
+```
+
+## Observability
+
+### OpenTelemetry Tracing (`app/core/tracing.py`)
+
+Distributed tracing with OpenTelemetry:
+
+```env
+TRACING_ENABLED=true
+TRACING_EXPORTER=jaeger  # console, jaeger, otlp
+JAEGER_HOST=localhost
+JAEGER_PORT=6831
+OTLP_ENDPOINT=http://localhost:4317
+TRACING_SAMPLE_RATE=1.0
+```
+
+Usage in code:
+```python
+from app.core.tracing import traced, create_span, add_span_attributes
+
+@traced(name="process_application")
+async def process_application(app_id: str):
+    add_span_attributes({"application_id": app_id})
+    ...
+
+# Or manually
+with create_span("custom_operation", {"key": "value"}):
+    ...
+```
+
+### Prometheus Alerting (`monitoring/prometheus-alerts.yaml`)
+
+Pre-configured alerts for:
+- Service availability (ServiceDown, HighErrorRate)
+- Latency (HighLatencyP95, HighLatencyP99)
+- Application processing (HighApplicationFailureRate, ProcessingBacklog)
+- Queue health (HighDLQMessages, QueuePublishFailures)
+- Rate limiting (HighRateLimitViolations)
+- Resources (HighMemoryUsage, HighCPUUsage)
+- SLO burn rate (multi-window alerts)
+
+### Log Aggregation (`monitoring/loki-config.yaml`)
+
+Loki/Promtail configuration for centralized logging:
+- JSON log parsing
+- Label extraction (level, event_type, correlation_id)
+- Pre-built LogQL queries for dashboards
+- Alerting rules for log patterns
+
 ## Development Notes
 
 - **Application Status**: Applications now have full lifecycle tracking with status and timestamps
@@ -557,3 +672,6 @@ Protected against:
 - **Logging**: Service uses loguru with configurable JSON output for production
 - **Database Initialization**: Indexes are created automatically on startup via lifespan handler
 - **Security Headers**: Added in production mode; HSTS disabled in development
+- **WebSocket**: Real-time updates available at `/ws/status`
+- **Batch Processing**: Up to 100 applications per batch
+- **Export**: CSV streaming for large datasets, Excel with color-coded formatting

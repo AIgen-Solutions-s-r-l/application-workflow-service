@@ -1,0 +1,204 @@
+# Loki configuration for log aggregation
+# This file contains configuration for Promtail and Loki
+
+# =============================================================================
+# Loki Server Configuration
+# =============================================================================
+loki:
+  auth_enabled: false
+
+  server:
+    http_listen_port: 3100
+    grpc_listen_port: 9096
+
+  common:
+    path_prefix: /loki
+    storage:
+      filesystem:
+        chunks_directory: /loki/chunks
+        rules_directory: /loki/rules
+    replication_factor: 1
+    ring:
+      instance_addr: 127.0.0.1
+      kvstore:
+        store: inmemory
+
+  schema_config:
+    configs:
+      - from: 2020-10-24
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 24h
+
+  ruler:
+    alertmanager_url: http://localhost:9093
+
+  limits_config:
+    enforce_metric_name: false
+    reject_old_samples: true
+    reject_old_samples_max_age: 168h
+    max_entries_limit_per_query: 5000
+
+---
+# =============================================================================
+# Promtail Configuration (Log Collector)
+# =============================================================================
+promtail:
+  server:
+    http_listen_port: 9080
+    grpc_listen_port: 0
+
+  positions:
+    filename: /tmp/positions.yaml
+
+  clients:
+    - url: http://loki:3100/loki/api/v1/push
+
+  scrape_configs:
+    # Application Manager Service logs
+    - job_name: application-manager-service
+      static_configs:
+        - targets:
+            - localhost
+          labels:
+            job: application-manager-service
+            environment: production
+            __path__: /var/log/application-manager/*.log
+
+      pipeline_stages:
+        # Parse JSON logs
+        - json:
+            expressions:
+              level: level
+              message: message
+              timestamp: timestamp
+              correlation_id: correlation_id
+              user_id: user_id
+              event_type: event_type
+              application_id: application_id
+
+        # Extract labels
+        - labels:
+            level:
+            event_type:
+            correlation_id:
+
+        # Set timestamp
+        - timestamp:
+            source: timestamp
+            format: RFC3339Nano
+
+        # Drop debug logs in production
+        - match:
+            selector: '{job="application-manager-service"} |= "DEBUG"'
+            action: drop
+            drop_counter_reason: debug_logs
+
+    # Docker container logs (alternative)
+    - job_name: docker-containers
+      docker_sd_configs:
+        - host: unix:///var/run/docker.sock
+          refresh_interval: 5s
+      relabel_configs:
+        - source_labels: ['__meta_docker_container_name']
+          regex: '/(.*)'
+          target_label: 'container'
+        - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+          target_label: 'service'
+      pipeline_stages:
+        - json:
+            expressions:
+              level: level
+              message: message
+        - labels:
+            level:
+
+---
+# =============================================================================
+# LogQL Queries for Dashboards
+# =============================================================================
+# Save these queries in Grafana for monitoring
+
+queries:
+  # Error rate
+  error_rate: |
+    sum(rate({job="application-manager-service", level="ERROR"} [5m]))
+
+  # Errors by type
+  errors_by_type: |
+    sum by (event_type) (rate({job="application-manager-service", level="ERROR"} [5m]))
+
+  # Application events
+  application_events: |
+    {job="application-manager-service"} |= "application" | json | event_type =~ "application.*"
+
+  # Slow requests (from logs)
+  slow_requests: |
+    {job="application-manager-service"} | json | duration > 1s
+
+  # Authentication failures
+  auth_failures: |
+    {job="application-manager-service"} |= "auth" |= "failed"
+
+  # Rate limit violations
+  rate_limits: |
+    {job="application-manager-service"} |= "rate_limit"
+
+  # User activity
+  user_activity: |
+    {job="application-manager-service"} | json | user_id != "" | line_format "{{.user_id}}: {{.message}}"
+
+  # Correlation ID trace
+  trace_correlation: |
+    {job="application-manager-service"} |= "CORRELATION_ID_PLACEHOLDER"
+
+---
+# =============================================================================
+# Alerting Rules for Loki
+# =============================================================================
+alerting_rules:
+  groups:
+    - name: application-manager-logs
+      rules:
+        - alert: HighErrorLogRate
+          expr: |
+            sum(rate({job="application-manager-service", level="ERROR"}[5m])) > 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High error log rate"
+            description: "More than 1 error per second in logs"
+
+        - alert: CriticalErrorDetected
+          expr: |
+            count_over_time({job="application-manager-service", level="CRITICAL"}[5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Critical error detected"
+            description: "A critical error was logged"
+
+        - alert: AuthenticationFailureSpike
+          expr: |
+            sum(rate({job="application-manager-service"} |= "auth" |= "failed" [5m])) > 0.5
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Authentication failure spike"
+            description: "Elevated authentication failures detected"
+
+        - alert: DatabaseErrorDetected
+          expr: |
+            count_over_time({job="application-manager-service"} |= "DatabaseOperationError" [5m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Database error detected"
+            description: "Database operation errors in logs"

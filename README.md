@@ -338,6 +338,58 @@ GET /metrics
 
 ## Advanced Features
 
+### WebSocket Real-Time Updates
+
+Get real-time status updates without polling:
+
+```javascript
+// Connect with JWT token
+const ws = new WebSocket('ws://localhost:8009/ws/status?token=<jwt_token>');
+
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    console.log(data.type, data);  // "status_update", "batch_update", etc.
+};
+```
+
+### Batch Operations
+
+Submit multiple applications at once:
+
+```bash
+# Submit batch (up to 100 items)
+curl -X POST "http://localhost:8009/batch/applications" \
+  -H "Authorization: Bearer <token>" \
+  -F 'items=[{"jobs":[...],"style":"modern"},{"jobs":[...],"style":"classic"}]' \
+  -F 'cv=@shared_resume.pdf'
+
+# Response: {"batch_id": "...", "status": "pending", "total": 2}
+
+# Check progress
+GET /batch/applications/{batch_id}
+
+# Cancel batch
+DELETE /batch/applications/{batch_id}
+```
+
+### Data Export
+
+Export applications to CSV or Excel:
+
+```bash
+# Get export summary
+GET /export/summary
+
+# Download CSV
+GET /export/csv?portal=LinkedIn&date_from=2025-01-01
+
+# Download Excel (color-coded)
+GET /export/excel
+
+# Stream large datasets
+GET /export/csv?stream=true
+```
+
 ### Idempotency Keys
 
 Prevent duplicate submissions using idempotency keys:
@@ -480,6 +532,33 @@ Import the dashboard configuration from `monitoring/slo-config.yaml` into Grafan
 - Error rate tracking
 - Queue depth monitoring
 - SLO burn rate alerts
+
+### Distributed Tracing
+
+OpenTelemetry tracing with Jaeger/OTLP support:
+
+```env
+TRACING_ENABLED=true
+TRACING_EXPORTER=jaeger
+JAEGER_HOST=localhost
+JAEGER_PORT=6831
+```
+
+### Alerting Rules
+
+Pre-configured Prometheus alerts in `monitoring/prometheus-alerts.yaml`:
+- Service availability and error rates
+- Latency SLO violations
+- Application processing health
+- Queue and database issues
+- Resource utilization
+
+### Log Aggregation
+
+Loki/Promtail configuration in `monitoring/loki-config.yaml`:
+- JSON log parsing with label extraction
+- Pre-built LogQL queries
+- Log-based alerting rules
 
 ## Contributing
 
