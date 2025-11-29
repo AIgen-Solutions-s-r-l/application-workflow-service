@@ -22,6 +22,14 @@ class Settings(BaseSettings):
     mongodb: str = os.getenv("MONGODB", "mongodb://localhost:27017")
     mongodb_database: str = os.getenv("MONGODB_DATABASE", "resumes")
 
+    # MongoDB connection pool settings
+    mongo_max_pool_size: int = int(os.getenv("MONGO_MAX_POOL_SIZE", "100"))
+    mongo_min_pool_size: int = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
+    mongo_max_idle_time_ms: int = int(os.getenv("MONGO_MAX_IDLE_TIME_MS", "30000"))
+    mongo_connect_timeout_ms: int = int(os.getenv("MONGO_CONNECT_TIMEOUT_MS", "5000"))
+    mongo_server_selection_timeout_ms: int = int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000"))
+    mongo_socket_timeout_ms: int = int(os.getenv("MONGO_SOCKET_TIMEOUT_MS", "30000"))
+
     # RabbitMQ settings
     rabbitmq_url: str = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
     middleware_queue: str = os.getenv("MIDDLEWARE_QUEUE", "middleware_notification_queue")

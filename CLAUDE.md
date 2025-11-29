@@ -440,6 +440,111 @@ Alerting rules included for:
 - Database/queue issues
 - Error budget burn rate
 
+## Performance Optimization
+
+### Database Configuration (`app/core/database.py`)
+
+The service uses optimized MongoDB connections with:
+- **Connection Pooling**: Configurable pool size (default: 10-100 connections)
+- **Automatic Index Creation**: Indexes created on startup for query optimization
+- **Compression**: zstd, snappy, zlib compression support
+
+Key indexes:
+- `jobs_to_apply_per_user`: user_id, status, created_at (compound indexes)
+- `success_app`/`failed_app`: user_id, portal
+- `idempotency_keys`: key (unique), TTL index for auto-expiration
+
+Configuration options:
+```env
+MONGO_MAX_POOL_SIZE=100
+MONGO_MIN_POOL_SIZE=10
+MONGO_MAX_IDLE_TIME_MS=30000
+MONGO_CONNECT_TIMEOUT_MS=5000
+MONGO_SERVER_SELECTION_TIMEOUT_MS=5000
+MONGO_SOCKET_TIMEOUT_MS=30000
+```
+
+### Caching (`app/core/cache.py`)
+
+In-memory LRU cache with TTL support:
+- `application_cache`: 1000 entries, 60s TTL
+- `user_cache`: 500 entries, 300s TTL
+
+Usage:
+```python
+from app.core.cache import async_cached, application_cache
+
+@async_cached(application_cache, ttl=60, key_prefix="app_status")
+async def get_status(app_id: str) -> dict:
+    ...
+```
+
+## Security Features
+
+### Security Headers (`app/core/security_headers.py`)
+
+Middleware adds OWASP-recommended security headers:
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- `Content-Security-Policy`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` (disables camera, microphone, etc.)
+- `Strict-Transport-Security` (production only)
+
+### Audit Logging (`app/core/audit.py`)
+
+Structured audit logging for security events:
+
+```python
+from app.core.audit import audit_logger
+
+# Authentication events
+audit_logger.log_auth_success(user_id="123", ip_address="192.168.1.1")
+audit_logger.log_auth_failure(user_id="123", reason="Invalid credentials")
+
+# Application events
+audit_logger.log_application_created(user_id="123", application_id="456", job_count=5)
+audit_logger.log_application_status_changed(user_id="123", application_id="456", old_status="pending", new_status="processing")
+
+# Security events
+audit_logger.log_rate_limit_exceeded(user_id="123", endpoint="/applications")
+audit_logger.log_suspicious_activity(description="Multiple failed auth attempts")
+```
+
+Event types: `auth.*`, `authz.*`, `application.*`, `resume.*`, `security.*`
+
+### Input Validation (`app/core/input_validation.py`)
+
+Comprehensive input validation and sanitization:
+
+```python
+from app.core.input_validation import (
+    validate_and_sanitize,
+    detect_injection,
+    validate_file_upload,
+    sanitize_mongodb_query
+)
+
+# Sanitize user input
+clean_input = validate_and_sanitize(user_input, "field_name", max_length=1000)
+
+# Detect potential attacks
+injection_type = detect_injection(value)  # Returns: "sql_injection", "xss", "nosql_injection", etc.
+
+# Validate file uploads
+validate_file_upload(file, allowed_types=["application/pdf"], max_size_mb=10)
+
+# Sanitize MongoDB queries
+safe_query = sanitize_mongodb_query(user_provided_query)
+```
+
+Protected against:
+- SQL/NoSQL injection
+- XSS (Cross-Site Scripting)
+- Path traversal attacks
+- Dangerous file uploads
+
 ## Development Notes
 
 - **Application Status**: Applications now have full lifecycle tracking with status and timestamps
@@ -450,3 +555,5 @@ Alerting rules included for:
 - **Resume Upload**: CV/resume upload is optional in application submission
 - **Authentication**: JWT token must contain `id` field (user ID as string)
 - **Logging**: Service uses loguru with configurable JSON output for production
+- **Database Initialization**: Indexes are created automatically on startup via lifespan handler
+- **Security Headers**: Added in production mode; HSTS disabled in development
