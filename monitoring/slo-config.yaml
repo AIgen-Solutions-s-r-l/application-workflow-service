@@ -1,0 +1,249 @@
+# SLO Configuration for Application Manager Service
+# This file defines Service Level Objectives and alerting rules for Prometheus/Grafana
+
+# =============================================================================
+# Service Level Objectives (SLOs)
+# =============================================================================
+
+slos:
+  # Availability SLO: 99.9% uptime
+  availability:
+    name: "Service Availability"
+    target: 99.9
+    window: 30d
+    description: "Percentage of successful HTTP requests (non-5xx)"
+    metric: |
+      sum(rate(http_requests_total{status_code!~"5.."}[5m])) /
+      sum(rate(http_requests_total[5m])) * 100
+
+  # Latency SLO: 95% of requests under 500ms
+  latency_p95:
+    name: "Request Latency (P95)"
+    target: 95
+    threshold_ms: 500
+    window: 30d
+    description: "Percentage of requests completing within 500ms"
+    metric: |
+      histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) < 0.5
+
+  # Latency SLO: 99% of requests under 2s
+  latency_p99:
+    name: "Request Latency (P99)"
+    target: 99
+    threshold_ms: 2000
+    window: 30d
+    description: "Percentage of requests completing within 2 seconds"
+    metric: |
+      histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) < 2
+
+  # Application Processing SLO: 99% success rate
+  processing_success:
+    name: "Application Processing Success"
+    target: 99
+    window: 7d
+    description: "Percentage of applications processed successfully"
+    metric: |
+      sum(rate(queue_messages_consumed_total{status="success"}[1h])) /
+      sum(rate(queue_messages_consumed_total[1h])) * 100
+
+  # Error Budget: Based on 99.9% availability
+  error_budget:
+    name: "Monthly Error Budget"
+    target_availability: 99.9
+    window: 30d
+    description: "Remaining error budget for the month"
+    # 30 days * 24 hours * 60 minutes * (100% - 99.9%) = 43.2 minutes of downtime allowed
+
+# =============================================================================
+# Prometheus Alerting Rules
+# =============================================================================
+
+alerting_rules:
+  groups:
+    - name: application-manager-slos
+      rules:
+        # High Error Rate Alert
+        - alert: HighErrorRate
+          expr: |
+            sum(rate(http_requests_total{status_code=~"5.."}[5m])) /
+            sum(rate(http_requests_total[5m])) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+            service: application-manager
+          annotations:
+            summary: "High error rate detected"
+            description: "Error rate is above 1% for the last 5 minutes"
+            runbook_url: "https://runbooks.example.com/application-manager/high-error-rate"
+
+        # High Latency Alert (P95)
+        - alert: HighLatencyP95
+          expr: |
+            histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+            service: application-manager
+          annotations:
+            summary: "High P95 latency detected"
+            description: "95th percentile latency is above 500ms"
+
+        # Very High Latency Alert (P99)
+        - alert: HighLatencyP99
+          expr: |
+            histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+          for: 5m
+          labels:
+            severity: critical
+            service: application-manager
+          annotations:
+            summary: "Critical P99 latency detected"
+            description: "99th percentile latency is above 2 seconds"
+
+        # Service Down Alert
+        - alert: ServiceDown
+          expr: up{job="application-manager"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            service: application-manager
+          annotations:
+            summary: "Application Manager Service is down"
+            description: "The service has been unreachable for more than 1 minute"
+
+        # Database Connection Alert
+        - alert: DatabaseUnhealthy
+          expr: |
+            sum(rate(db_operations_total{status="error"}[5m])) /
+            sum(rate(db_operations_total[5m])) > 0.1
+          for: 5m
+          labels:
+            severity: critical
+            service: application-manager
+          annotations:
+            summary: "Database connection issues"
+            description: "More than 10% of database operations are failing"
+
+        # Queue Processing Alert
+        - alert: QueueProcessingBacklog
+          expr: |
+            sum(rate(queue_messages_consumed_total{status="failed"}[15m])) /
+            sum(rate(queue_messages_consumed_total[15m])) > 0.05
+          for: 15m
+          labels:
+            severity: warning
+            service: application-manager
+          annotations:
+            summary: "High queue processing failure rate"
+            description: "More than 5% of queue messages are failing to process"
+
+        # DLQ Alert
+        - alert: DLQMessagesIncreasing
+          expr: increase(dlq_messages_total[1h]) > 10
+          for: 5m
+          labels:
+            severity: warning
+            service: application-manager
+          annotations:
+            summary: "Dead Letter Queue messages increasing"
+            description: "More than 10 messages sent to DLQ in the last hour"
+
+        # Rate Limiting Alert
+        - alert: HighRateLimitExceeded
+          expr: increase(rate_limit_exceeded_total[5m]) > 100
+          for: 5m
+          labels:
+            severity: warning
+            service: application-manager
+          annotations:
+            summary: "High rate of rate-limited requests"
+            description: "More than 100 rate-limited requests in the last 5 minutes"
+
+        # Error Budget Burn Rate Alert
+        - alert: ErrorBudgetBurnRateCritical
+          expr: |
+            (
+              sum(rate(http_requests_total{status_code=~"5.."}[1h])) /
+              sum(rate(http_requests_total[1h]))
+            ) > (1 - 0.999) * 14.4
+          for: 5m
+          labels:
+            severity: critical
+            service: application-manager
+          annotations:
+            summary: "Error budget burning too fast"
+            description: "At current error rate, monthly error budget will be exhausted in less than 2 days"
+
+        # Worker Down Alert
+        - alert: WorkerNotActive
+          expr: worker_active{worker_name="application_worker"} == 0
+          for: 5m
+          labels:
+            severity: critical
+            service: application-manager
+          annotations:
+            summary: "Application worker is not active"
+            description: "The background worker has been inactive for more than 5 minutes"
+
+# =============================================================================
+# Grafana Dashboard Configuration
+# =============================================================================
+
+dashboards:
+  overview:
+    title: "Application Manager - Overview"
+    panels:
+      - title: "Request Rate"
+        type: graph
+        query: sum(rate(http_requests_total[5m])) by (endpoint)
+
+      - title: "Error Rate"
+        type: graph
+        query: sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (endpoint)
+
+      - title: "Latency (P50, P95, P99)"
+        type: graph
+        queries:
+          - histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+          - histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+          - histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+
+      - title: "Applications Submitted"
+        type: counter
+        query: sum(increase(applications_submitted_total[24h]))
+
+      - title: "Queue Messages"
+        type: graph
+        queries:
+          - sum(rate(queue_messages_published_total[5m])) by (queue_name)
+          - sum(rate(queue_messages_consumed_total[5m])) by (queue_name, status)
+
+      - title: "Rate Limit Status"
+        type: graph
+        query: sum(rate(rate_limit_exceeded_total[5m])) by (endpoint)
+
+      - title: "Availability (30d)"
+        type: gauge
+        query: |
+          (1 - sum(rate(http_requests_total{status_code=~"5.."}[30d])) /
+          sum(rate(http_requests_total[30d]))) * 100
+        thresholds:
+          - value: 99.9
+            color: green
+          - value: 99.0
+            color: yellow
+          - value: 0
+            color: red
+
+      - title: "Error Budget Remaining"
+        type: gauge
+        query: |
+          100 - (sum(increase(http_requests_total{status_code=~"5.."}[30d])) /
+          sum(increase(http_requests_total[30d])) * 100) / 0.1 * 100
+        thresholds:
+          - value: 50
+            color: green
+          - value: 20
+            color: yellow
+          - value: 0
+            color: red

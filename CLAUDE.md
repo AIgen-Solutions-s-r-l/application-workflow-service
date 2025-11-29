@@ -303,7 +303,8 @@ tests/
 ├── integration/             # End-to-end workflow tests
 ├── test_sprint1_features.py # Sprint 1 feature tests (status, pagination, notifications)
 ├── test_sprint2_features.py # Sprint 2 feature tests (async, rate limit, retry)
-└── test_sprint3_features.py # Sprint 3 feature tests (metrics, correlation, filtering)
+├── test_sprint3_features.py # Sprint 3 feature tests (metrics, correlation, filtering)
+└── test_sprint4_features.py # Sprint 4 feature tests (health, errors, idempotency)
 ```
 
 ### Async Testing
@@ -367,6 +368,77 @@ Use correlation IDs to trace requests across services:
 curl -H "X-Correlation-ID: my-trace-123" /applications
 # Response includes: X-Correlation-ID: my-trace-123
 ```
+
+### Idempotency Keys
+
+Prevent duplicate submissions using idempotency keys:
+```bash
+curl -X POST /applications \
+  -H "X-Idempotency-Key: unique-request-id-123" \
+  -H "Authorization: Bearer <token>" \
+  ...
+```
+
+- Keys are stored for 24 hours
+- Duplicate requests return cached response with `X-Idempotency-Replayed: true`
+- Failed requests allow retry with same key
+
+### Structured Error Responses
+
+All errors return structured JSON:
+```json
+{
+  "error": "ApplicationNotFoundError",
+  "code": "ERR_2001",
+  "message": "Application not found: app_123",
+  "correlation_id": "abc-123",
+  "timestamp": "2025-02-27T10:00:00Z",
+  "details": null
+}
+```
+
+Error code ranges:
+- `ERR_1xxx`: General errors (validation, not found)
+- `ERR_2xxx`: Application errors
+- `ERR_3xxx`: Job errors
+- `ERR_4xxx`: Resume errors
+- `ERR_5xxx`: Database errors
+- `ERR_6xxx`: Queue errors
+- `ERR_7xxx`: Rate limit errors
+- `ERR_8xxx`: Authentication errors
+- `ERR_9xxx`: Idempotency errors
+
+### Health Check Endpoints
+
+Kubernetes-compatible health probes:
+```bash
+# Liveness probe (is the service running?)
+GET /health/live
+# Returns: {"status": "alive", "timestamp": "..."}
+
+# Readiness probe (can handle traffic?)
+GET /health/ready
+# Returns: {"status": "ready", "checks": {"mongodb": "ready", "rabbitmq": "ready"}}
+
+# Full health check with details
+GET /health
+# Returns: {"status": "healthy", "dependencies": [...], "environment": "..."}
+```
+
+### SLO Configuration
+
+Service Level Objectives are defined in `monitoring/slo-config.yaml`:
+- **Availability**: 99.9% (non-5xx responses)
+- **Latency P95**: 95% under 500ms
+- **Latency P99**: 99% under 2s
+- **Processing Success**: 99% applications processed successfully
+
+Alerting rules included for:
+- High error rate
+- High latency (P95/P99)
+- Service down
+- Database/queue issues
+- Error budget burn rate
 
 ## Development Notes
 

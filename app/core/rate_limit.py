@@ -223,8 +223,8 @@ class RateLimitMiddleware:
 
         request = Request(scope, receive)
 
-        # Skip rate limiting for health checks
-        if request.url.path in ["/health", "/health/live", "/health/ready", "/"]:
+        # Skip rate limiting for health checks and metrics
+        if request.url.path in ["/health", "/health/live", "/health/ready", "/healthcheck", "/metrics", "/"]:
             await self.app(scope, receive, send)
             return
 
