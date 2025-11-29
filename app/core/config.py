@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     # MongoDB settings
     mongodb: str = os.getenv("MONGODB", "mongodb://localhost:27017")
+    mongodb_database: str = os.getenv("MONGODB_DATABASE", "resumes")
 
     # RabbitMQ settings
     rabbitmq_url: str = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")

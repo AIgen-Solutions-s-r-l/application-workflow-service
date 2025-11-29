@@ -73,7 +73,7 @@ docker run -p 8009:8000 application-manager-service
 ```
 app/
 ├── core/           # Core functionality (config, auth, DB clients)
-├── models/         # Pydantic models (JobData, etc.)
+├── models/         # Pydantic models (JobData, Application, etc.)
 ├── routers/        # FastAPI route handlers
 ├── schemas/        # Request/response schemas
 ├── services/       # Business logic layer
@@ -83,23 +83,41 @@ app/
 ### Key Services
 
 **ApplicationUploaderService** (`app/services/application_uploader_service.py`)
-- Stores job application data in MongoDB
-- Handles application state management (pending/success/failed)
+- Stores job application data in MongoDB with status tracking
+- Handles application state management (pending → processing → success/failed)
+- Provides status querying and updates with timestamps
 
 **PdfResumeService** (`app/services/pdf_resume_service.py`)
 - Manages PDF resume storage and retrieval
 - Stores resumes in MongoDB with user_id association
 
 **NotificationService** (`app/services/notification_service.py`)
-- Publishes application status notifications to RabbitMQ
+- Publishes enriched application status notifications to RabbitMQ
+- Event types: `application.submitted`, `application.status_changed`
 - Uses the `middleware_notification_queue` queue
 
 ### MongoDB Collections
 
-- `applications_collection`: Pending job applications
-- `pdf_resumes_collection`: User-uploaded PDF resumes
+- `jobs_to_apply_per_user`: Pending job applications (via `applications_collection`)
+- `pdf_resumes`: User-uploaded PDF resumes
 - `success_app`: Successfully processed applications
 - `failed_app`: Failed applications
+
+### Application Status Lifecycle
+
+Applications follow this status progression:
+
+```
+pending → processing → success
+                    ↘ failed
+```
+
+Each application document includes:
+- `status`: Current state (pending/processing/success/failed)
+- `created_at`: When the application was submitted
+- `updated_at`: When the application was last modified
+- `processed_at`: When the application reached a terminal state
+- `error_reason`: Error message if failed
 
 ### Authentication Flow
 
@@ -107,12 +125,15 @@ JWT tokens are required for all `/applications` and `/applied` endpoints. The to
 
 ### Data Models
 
+**Application** (`app/models/application.py`)
+- Primary model for application documents with status tracking
+- `ApplicationStatus` enum: PENDING, PROCESSING, SUCCESS, FAILED
+- Includes timestamps: created_at, updated_at, processed_at
+
 **JobData** (`app/models/job.py`)
-- Primary model for job information
+- Model for job information within applications
 - `id` field is `Optional[str]` (changed from UUID for flexibility)
 - Contains portal, title, company, location, description, etc.
-
-**Important**: The `id` field in JobData is a string, not a UUID. This allows compatibility with various external ID formats.
 
 ## Configuration
 
@@ -121,6 +142,7 @@ Environment variables are managed through `app/core/config.py`. Create a `.env` 
 ```env
 SERVICE_NAME=application_manager_service
 MONGODB=mongodb://localhost:27017
+MONGODB_DATABASE=resumes
 RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 MIDDLEWARE_QUEUE=middleware_notification_queue
 SECRET_KEY=your-secret-key-here
@@ -141,17 +163,79 @@ Content-Type: multipart/form-data
 -F 'jobs={"jobs":[{...}]}'
 -F 'style=samudum_bold'
 -F 'cv=@/path/to/file.pdf'  # Optional
+
+# Response (new format with tracking):
+{
+    "application_id": "abc123",
+    "status": "pending",
+    "status_url": "/applications/abc123/status",
+    "job_count": 5,
+    "created_at": "2025-02-27T10:00:00Z"
+}
 ```
 
-### Application Retrieval
+### Application Status
 ```bash
-GET /applied                # All successful applications (excludes resume_optimized, cover_letter)
-GET /applied/{app_id}       # Detailed info for specific success (only resume_optimized, cover_letter)
-GET /fail_applied           # All failed applications
-GET /fail_applied/{app_id}  # Detailed info for specific failure
+GET /applications/{application_id}/status
+Authorization: Bearer <jwt_token>
+
+# Response:
+{
+    "application_id": "abc123",
+    "status": "processing",
+    "created_at": "2025-02-27T10:00:00Z",
+    "updated_at": "2025-02-27T10:05:00Z",
+    "processed_at": null,
+    "job_count": 5,
+    "error_reason": null
+}
+```
+
+### Application Retrieval (with Pagination)
+```bash
+# Paginated list of successful applications
+GET /applied?limit=20&cursor=<base64_cursor>
+
+# Response:
+{
+    "data": {"app_id_1": {...}, "app_id_2": {...}},
+    "pagination": {
+        "limit": 20,
+        "next_cursor": "eyJpZCI6IjEyMyJ9",
+        "has_more": true,
+        "total_count": 150
+    }
+}
+
+# Detailed info for specific application
+GET /applied/{app_id}
+
+# Failed applications (same pagination)
+GET /fail_applied?limit=20&cursor=<base64_cursor>
+GET /fail_applied/{app_id}
 ```
 
 All endpoints require `Authorization: Bearer <jwt_token>` header.
+
+### Notification Payload Format
+
+Notifications are published to RabbitMQ with enriched payloads:
+
+```json
+{
+    "event": "application.submitted",
+    "version": "1.0",
+    "application_id": "abc123",
+    "user_id": "user456",
+    "status": "pending",
+    "job_count": 5,
+    "timestamp": "2025-02-27T10:00:00Z"
+}
+```
+
+For status changes, additional fields are included:
+- `previous_status`: The status before the change
+- `error_reason`: Error message if status is "failed"
 
 ## Testing Guidelines
 
@@ -168,7 +252,8 @@ tests/
 ├── services/                # Service layer tests
 ├── core/                    # Core component tests
 ├── routers/                 # API endpoint tests
-└── integration/             # End-to-end workflow tests
+├── integration/             # End-to-end workflow tests
+└── test_sprint1_features.py # Sprint 1 feature tests
 ```
 
 ### Async Testing
@@ -182,16 +267,19 @@ All async functions use `pytest-asyncio` with `asyncio_mode = auto` configured i
 ## Future Architecture Notes
 
 The memory-bank documents describe a planned migration to worker-based asynchronous processing:
-- API tier will return immediately with tracking IDs
+- API tier will return immediately with tracking IDs (partially implemented)
 - Workers will consume from RabbitMQ and process applications asynchronously
-- Status endpoints will allow clients to poll application progress
+- Status endpoints allow clients to poll application progress (implemented)
 
 When implementing new features, consider compatibility with this future architecture. Keep business logic in services rather than routers to facilitate eventual extraction to workers.
 
 ## Development Notes
 
-- **JobData ID Format**: The `id` field was changed from UUID to string (Feb 2025) for flexibility with external systems
+- **Application Status**: Applications now have full lifecycle tracking with status and timestamps
+- **Pagination**: List endpoints support cursor-based pagination with configurable limits
+- **Notification Payloads**: Enriched event payloads replace the simple `{"updated": true}` format
+- **Database Config**: Database name is now configurable via `MONGODB_DATABASE` env var
+- **JobData ID Format**: The `id` field was changed from UUID to string (Feb 2025)
 - **Resume Upload**: CV/resume upload is optional in application submission
 - **Authentication**: JWT token must contain `id` field (user ID as string)
 - **Logging**: Service uses loguru with configurable JSON output for production
-- **Poetry vs pip**: Project uses Poetry for dependency management, but requirements.txt is available for pip-based workflows

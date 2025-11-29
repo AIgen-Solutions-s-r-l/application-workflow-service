@@ -80,6 +80,8 @@ def mock_notification_publisher():
     """Mock the notification publisher."""
     with patch('app.services.application_uploader_service.notification_publisher') as mock_publisher:
         mock_publisher.publish_application_updated = AsyncMock()
+        mock_publisher.publish_application_submitted = AsyncMock()
+        mock_publisher.publish_status_changed = AsyncMock()
         yield mock_publisher
 
 # Test Data Fixtures
