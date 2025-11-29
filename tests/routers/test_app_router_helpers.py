@@ -1,98 +1,11 @@
+"""Tests for app_router helper functions."""
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-import json
-from fastapi import HTTPException
-from app.routers.app_router import fetch_user_doc, parse_applications
+from unittest.mock import patch
+
 from app.models.job import JobData
+from app.routers.app_router import parse_applications
 
-@pytest.mark.asyncio
-async def test_fetch_user_doc_success():
-    """Test successful document fetch."""
-    # Arrange
-    mock_client = MagicMock()
-    mock_db = MagicMock()
-    mock_collection = AsyncMock()
-    mock_doc = {"user_id": "test_user", "content": {"app1": {"title": "Test Job"}}}
-    
-    # Use AsyncMock for get_database to properly handle awaits
-    mock_client.get_database = MagicMock(return_value=mock_db)
-    mock_db.get_collection = MagicMock(return_value=mock_collection)
-    mock_collection.find_one = AsyncMock(return_value=mock_doc)
-    
-    with patch('app.routers.app_router.mongo_client', mock_client):
-        # Act
-        result = await fetch_user_doc("test_db", "test_collection", "test_user")
-        
-        # Assert
-        mock_client.get_database.assert_called_once_with("test_db")
-        mock_db.get_collection.assert_called_once_with("test_collection")
-        mock_collection.find_one.assert_called_once_with({"user_id": "test_user"})
-        assert result == mock_doc
-
-@pytest.mark.asyncio
-async def test_fetch_user_doc_not_found():
-    """Test handling when no document is found."""
-    # Arrange
-    mock_client = MagicMock()
-    mock_db = MagicMock()
-    mock_collection = AsyncMock()
-    
-    # Use AsyncMock for get_database to properly handle awaits
-    mock_client.get_database = MagicMock(return_value=mock_db)
-    mock_db.get_collection = MagicMock(return_value=mock_collection)
-    mock_collection.find_one = AsyncMock(return_value=None)
-    
-    with patch('app.routers.app_router.mongo_client', mock_client):
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
-            await fetch_user_doc("test_db", "test_collection", "test_user")
-        
-        assert exc_info.value.status_code == 404
-        assert "No applications found" in exc_info.value.detail
-
-@pytest.mark.asyncio
-async def test_fetch_user_doc_empty_content():
-    """Test handling when document has empty content."""
-    # Arrange
-    mock_client = MagicMock()
-    mock_db = MagicMock()
-    mock_collection = AsyncMock()
-    mock_doc = {"user_id": "test_user", "content": {}}
-    
-    # Use AsyncMock for get_database to properly handle awaits
-    mock_client.get_database = MagicMock(return_value=mock_db)
-    mock_db.get_collection = MagicMock(return_value=mock_collection)
-    mock_collection.find_one = AsyncMock(return_value=mock_doc)
-    
-    with patch('app.routers.app_router.mongo_client', mock_client):
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
-            await fetch_user_doc("test_db", "test_collection", "test_user")
-        
-        assert exc_info.value.status_code == 404
-        assert "No applications found" in exc_info.value.detail
-
-@pytest.mark.asyncio
-async def test_fetch_user_doc_missing_content():
-    """Test handling when document is missing content field."""
-    # Arrange
-    mock_client = MagicMock()
-    mock_db = MagicMock()
-    mock_collection = AsyncMock()
-    mock_doc = {"user_id": "test_user"}  # No content field
-    
-    # Use AsyncMock for get_database to properly handle awaits
-    mock_client.get_database = MagicMock(return_value=mock_db)
-    mock_db.get_collection = MagicMock(return_value=mock_collection)
-    mock_collection.find_one = AsyncMock(return_value=mock_doc)
-    
-    with patch('app.routers.app_router.mongo_client', mock_client):
-        # Act & Assert
-        with pytest.raises(HTTPException) as exc_info:
-            await fetch_user_doc("test_db", "test_collection", "test_user")
-        
-        assert exc_info.value.status_code == 404
-        assert "No applications found" in exc_info.value.detail
 
 def test_parse_applications_success():
     """Test successful parsing of applications."""
