@@ -6,6 +6,7 @@ Provides:
 - Batch status tracking
 - Background batch processing
 """
+
 import asyncio
 from datetime import datetime
 from enum import Enum
@@ -21,6 +22,7 @@ from app.services.notification_service import NotificationPublisher
 
 class BatchStatus(str, Enum):
     """Batch processing status."""
+
     PENDING = "pending"
     PROCESSING = "processing"
     COMPLETED = "completed"
@@ -30,12 +32,14 @@ class BatchStatus(str, Enum):
 
 class BatchItem(BaseModel):
     """A single item in a batch submission."""
+
     jobs: list[dict]
     style: str | None = None
 
 
 class BatchResult(BaseModel):
     """Result of a single batch item processing."""
+
     index: int
     application_id: str | None = None
     status: str
@@ -44,6 +48,7 @@ class BatchResult(BaseModel):
 
 class BatchResponse(BaseModel):
     """Response for batch submission."""
+
     batch_id: str
     status: BatchStatus
     total: int
@@ -53,6 +58,7 @@ class BatchResponse(BaseModel):
 
 class BatchStatusResponse(BaseModel):
     """Response for batch status query."""
+
     batch_id: str
     status: BatchStatus
     total: int
@@ -78,10 +84,7 @@ class BatchService:
         self._notification = NotificationPublisher()
 
     async def create_batch(
-        self,
-        user_id: str,
-        items: list[BatchItem],
-        cv_id: str | None = None
+        self, user_id: str, items: list[BatchItem], cv_id: str | None = None
     ) -> BatchResponse:
         """
         Create and start processing a batch of applications.
@@ -107,27 +110,18 @@ class BatchService:
             "failed": 0,
             "results": [],
             "created_at": now,
-            "completed_at": None
+            "completed_at": None,
         }
 
         # Start background processing
-        asyncio.create_task(
-            self._process_batch(batch_id, user_id, items, cv_id)
-        )
+        asyncio.create_task(self._process_batch(batch_id, user_id, items, cv_id))
 
         return BatchResponse(
-            batch_id=batch_id,
-            status=BatchStatus.PENDING,
-            total=len(items),
-            created_at=now
+            batch_id=batch_id, status=BatchStatus.PENDING, total=len(items), created_at=now
         )
 
     async def _process_batch(
-        self,
-        batch_id: str,
-        user_id: str,
-        items: list[BatchItem],
-        cv_id: str | None
+        self, batch_id: str, user_id: str, items: list[BatchItem], cv_id: str | None
     ) -> None:
         """
         Process batch items in background.
@@ -151,7 +145,7 @@ class BatchService:
             status=BatchStatus.PROCESSING.value,
             total=len(items),
             processed=0,
-            failed=0
+            failed=0,
         )
 
         for index, item in enumerate(items):
@@ -160,10 +154,7 @@ class BatchService:
             try:
                 # Create application
                 application_id = await self._uploader.insert_application_jobs(
-                    user_id=user_id,
-                    job_list_to_apply=item.jobs,
-                    cv_id=cv_id,
-                    style=item.style
+                    user_id=user_id, job_list_to_apply=item.jobs, cv_id=cv_id, style=item.style
                 )
 
                 if application_id:
@@ -191,7 +182,7 @@ class BatchService:
                 status=BatchStatus.PROCESSING.value,
                 total=len(items),
                 processed=batch_data["processed"],
-                failed=batch_data["failed"]
+                failed=batch_data["failed"],
             )
 
             # Small delay to avoid overwhelming the system
@@ -214,7 +205,7 @@ class BatchService:
             status=batch_data["status"].value,
             total=len(items),
             processed=batch_data["processed"],
-            failed=batch_data["failed"]
+            failed=batch_data["failed"],
         )
 
         logger.info(
@@ -222,11 +213,7 @@ class BatchService:
             f"{batch_data['succeeded']} succeeded, {batch_data['failed']} failed"
         )
 
-    async def get_batch_status(
-        self,
-        batch_id: str,
-        user_id: str
-    ) -> BatchStatusResponse | None:
+    async def get_batch_status(self, batch_id: str, user_id: str) -> BatchStatusResponse | None:
         """
         Get the status of a batch.
 
@@ -255,14 +242,10 @@ class BatchService:
             failed=batch_data["failed"],
             results=batch_data["results"],
             created_at=batch_data["created_at"],
-            completed_at=batch_data["completed_at"]
+            completed_at=batch_data["completed_at"],
         )
 
-    async def cancel_batch(
-        self,
-        batch_id: str,
-        user_id: str
-    ) -> bool:
+    async def cancel_batch(self, batch_id: str, user_id: str) -> bool:
         """
         Cancel a pending or processing batch.
 

@@ -4,6 +4,7 @@ Application models for job application workflow.
 This module defines the core data models for tracking application status
 throughout the processing lifecycle.
 """
+
 from datetime import datetime
 from enum import Enum
 
@@ -16,6 +17,7 @@ class ApplicationStatus(str, Enum):
 
     Lifecycle: pending -> processing -> success/failed
     """
+
     PENDING = "pending"
     PROCESSING = "processing"
     SUCCESS = "success"
@@ -29,37 +31,34 @@ class Application(BaseModel):
     This model tracks the full lifecycle of a batch of job applications
     submitted by a user.
     """
+
     id: str | None = Field(None, alias="_id", description="MongoDB document ID")
     user_id: str = Field(..., description="The ID of the user who submitted the application")
     jobs: list[dict] = Field(default_factory=list, description="List of jobs to apply for")
     status: ApplicationStatus = Field(
-        default=ApplicationStatus.PENDING,
-        description="Current status of the application batch"
+        default=ApplicationStatus.PENDING, description="Current status of the application batch"
     )
 
     # Timestamps
     created_at: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Timestamp when the application was created"
+        default_factory=datetime.utcnow, description="Timestamp when the application was created"
     )
     updated_at: datetime = Field(
         default_factory=datetime.utcnow,
-        description="Timestamp when the application was last updated"
+        description="Timestamp when the application was last updated",
     )
     processed_at: datetime | None = Field(
-        None,
-        description="Timestamp when the application reached a terminal state (success/failed)"
+        None, description="Timestamp when the application reached a terminal state (success/failed)"
     )
 
     # Processing metadata
-    sent: bool = Field(default=False, description="Whether the application has been sent for processing")
+    sent: bool = Field(
+        default=False, description="Whether the application has been sent for processing"
+    )
     retries_left: int = Field(default=5, description="Number of retry attempts remaining")
     cv_id: str | None = Field(None, description="Reference to uploaded CV document")
     style: str | None = Field(None, description="Resume style preference")
-    error_reason: str | None = Field(
-        None,
-        description="Error message if application failed"
-    )
+    error_reason: str | None = Field(None, description="Error message if application failed")
 
     class Config:
         from_attributes = True
@@ -71,6 +70,7 @@ class ApplicationStatusResponse(BaseModel):
     """
     Response model for application status queries.
     """
+
     application_id: str = Field(..., description="The application ID")
     status: ApplicationStatus = Field(..., description="Current status")
     created_at: datetime = Field(..., description="When the application was created")
@@ -87,6 +87,7 @@ class ApplicationSubmitResponse(BaseModel):
     """
     Response model for application submission.
     """
+
     application_id: str = Field(..., description="The created application ID")
     status: ApplicationStatus = Field(..., description="Initial status (pending)")
     status_url: str = Field(..., description="URL to check application status")

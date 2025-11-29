@@ -5,6 +5,7 @@ Provides WebSocket endpoints for:
 - Application status updates
 - Batch processing progress
 """
+
 from fastapi import APIRouter, HTTPException, Query, WebSocket
 from jose import JWTError, jwt
 
@@ -29,11 +30,7 @@ async def get_user_from_token(token: str) -> str:
         HTTPException: If token is invalid.
     """
     try:
-        payload = jwt.decode(
-            token,
-            settings.secret_key,
-            algorithms=[settings.algorithm]
-        )
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
         user_id = payload.get("id")
         if not user_id:
             raise HTTPException(status_code=401, detail="Invalid token payload")
@@ -45,8 +42,7 @@ async def get_user_from_token(token: str) -> str:
 
 @router.websocket("/ws/status")
 async def websocket_status_endpoint(
-    websocket: WebSocket,
-    token: str = Query(..., description="JWT authentication token")
+    websocket: WebSocket, token: str = Query(..., description="JWT authentication token")
 ):
     """
     WebSocket endpoint for real-time application status updates.
@@ -73,7 +69,7 @@ async def websocket_status_endpoint(
 @router.get(
     "/ws/stats",
     summary="WebSocket connection statistics",
-    description="Get statistics about active WebSocket connections."
+    description="Get statistics about active WebSocket connections.",
 )
 async def websocket_stats():
     """
@@ -84,5 +80,5 @@ async def websocket_stats():
     """
     return {
         "total_connections": ws_manager.get_connection_count(),
-        "connected_users": len(ws_manager.get_connected_users())
+        "connected_users": len(ws_manager.get_connected_users()),
     }

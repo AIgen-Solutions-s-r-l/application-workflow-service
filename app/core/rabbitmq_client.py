@@ -27,14 +27,13 @@ class AsyncRabbitMQClient:
             self.connection = await aio_pika.connect_robust(self.rabbitmq_url)
             self.channel = await self.connection.channel()
             logger.info(
-                "RabbitMQ connection established",
-                event_type="rabbitmq_connection_established"
+                "RabbitMQ connection established", event_type="rabbitmq_connection_established"
             )
         except Exception as e:
             logger.error(
                 "Failed to connect to RabbitMQ: {error}",
                 error=str(e),
-                event_type="rabbitmq_connection_failed"
+                event_type="rabbitmq_connection_failed",
             )
             raise
 
@@ -47,7 +46,7 @@ class AsyncRabbitMQClient:
                 "Queue {queue_name} ensured (durability={durable})",
                 queue_name=queue_name,
                 durable=durable,
-                event_type="queue_ensured"
+                event_type="queue_ensured",
             )
             return queue
         except Exception as e:
@@ -57,11 +56,13 @@ class AsyncRabbitMQClient:
                 error=str(e),
                 event_type="queue_ensure_failed",
                 error_type=type(e).__name__,
-                error_details=str(e)
+                error_details=str(e),
             )
             raise
 
-    async def publish_message(self, queue_name: str, message: dict, persistent: bool = False) -> None:
+    async def publish_message(
+        self, queue_name: str, message: dict, persistent: bool = False
+    ) -> None:
         """Publishes a message to the queue."""
         try:
             await self.connect()
@@ -82,18 +83,20 @@ class AsyncRabbitMQClient:
                 "Message published to queue {queue_name}: {message}",
                 queue_name=queue_name,
                 message=message,
-                event_type="message_published"
+                event_type="message_published",
             )
         except Exception as e:
             logger.exception(
                 "Failed to publish message to queue {queue_name}: {error}",
                 queue_name=queue_name,
                 error=str(e),
-                event_type="message_publish_failed"
+                event_type="message_publish_failed",
             )
             raise
 
-    async def consume_messages(self, queue_name: str, callback: Callable, auto_ack: bool = False) -> None:
+    async def consume_messages(
+        self, queue_name: str, callback: Callable, auto_ack: bool = False
+    ) -> None:
         """Consumes messages from the queue asynchronously."""
         while True:
             try:
@@ -113,7 +116,7 @@ class AsyncRabbitMQClient:
                     error=str(e),
                     event_type="message_consume_error",
                     error_type=type(e).__name__,
-                    error_details=str(e)
+                    error_details=str(e),
                 )
                 await asyncio.sleep(5)
 
@@ -122,17 +125,15 @@ class AsyncRabbitMQClient:
         if self.connection and not self.connection.is_closed:
             try:
                 await self.connection.close()
-                logger.info(
-                    "RabbitMQ connection closed",
-                    event_type="rabbitmq_connection_closed"
-                )
+                logger.info("RabbitMQ connection closed", event_type="rabbitmq_connection_closed")
             except Exception as e:
                 logger.exception(
                     "Error while closing RabbitMQ connection: {error}",
                     error=str(e),
                     event_type="rabbitmq_connection_close_error",
                     error_type=type(e).__name__,
-                    error_details=str(e)
+                    error_details=str(e),
                 )
+
 
 # rabbit_client = AsyncRabbitMQClient(rabbitmq_url=settings.rabbitmq_url)

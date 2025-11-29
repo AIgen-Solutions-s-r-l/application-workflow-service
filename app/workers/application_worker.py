@@ -4,6 +4,7 @@ Application Worker for processing job applications asynchronously.
 This worker consumes messages from the application processing queue,
 processes each application, and updates its status accordingly.
 """
+
 import asyncio
 import json
 import signal
@@ -79,20 +80,17 @@ class ApplicationWorker:
             "Processing application {application_id}",
             application_id=application_id,
             user_id=user_id,
-            event_type="application_processing_start"
+            event_type="application_processing_start",
         )
 
         # Update status to PROCESSING
         await self._uploader.update_application_status(
-            application_id=application_id,
-            status=ApplicationStatus.PROCESSING
+            application_id=application_id, status=ApplicationStatus.PROCESSING
         )
 
         try:
             # Fetch the application document
-            doc = await applications_collection.find_one(
-                {"_id": ObjectId(application_id)}
-            )
+            doc = await applications_collection.find_one({"_id": ObjectId(application_id)})
 
             if not doc:
                 raise NonRetryableError(f"Application {application_id} not found")
@@ -111,19 +109,18 @@ class ApplicationWorker:
                 "Processing {job_count} jobs for application {application_id}",
                 job_count=len(jobs),
                 application_id=application_id,
-                event_type="jobs_processing"
+                event_type="jobs_processing",
             )
 
             # Mark as successful
             await self._uploader.update_application_status(
-                application_id=application_id,
-                status=ApplicationStatus.SUCCESS
+                application_id=application_id, status=ApplicationStatus.SUCCESS
             )
 
             logger.info(
                 "Application {application_id} processed successfully",
                 application_id=application_id,
-                event_type="application_processing_complete"
+                event_type="application_processing_complete",
             )
 
         except NonRetryableError:
@@ -154,7 +151,7 @@ class ApplicationWorker:
             "too many requests",
             "503",
             "504",
-            "502"
+            "502",
         ]
 
         error_str = str(error).lower()
@@ -178,7 +175,7 @@ class ApplicationWorker:
                 logger.error(
                     "Invalid message: missing required fields",
                     body=body,
-                    event_type="invalid_message"
+                    event_type="invalid_message",
                 )
                 await message.reject(requeue=False)
                 return
@@ -186,7 +183,7 @@ class ApplicationWorker:
             logger.info(
                 "Received message for application {application_id}",
                 application_id=application_id,
-                event_type="message_received"
+                event_type="message_received",
             )
 
             # Process with retry
@@ -200,7 +197,7 @@ class ApplicationWorker:
                         style=style,
                         max_retries=settings.max_retries,
                         retryable_exceptions=(RetryableError,),
-                        on_retry=lambda _attempt, err: ctx.record_error(err)
+                        on_retry=lambda _attempt, err: ctx.record_error(err),
                     )
                     await message.ack()
 
@@ -209,12 +206,12 @@ class ApplicationWorker:
                         "Non-retryable error for application {application_id}: {error}",
                         application_id=application_id,
                         error=str(e),
-                        event_type="non_retryable_error"
+                        event_type="non_retryable_error",
                     )
                     await self._uploader.update_application_status(
                         application_id=application_id,
                         status=ApplicationStatus.FAILED,
-                        error_reason=str(e)
+                        error_reason=str(e),
                     )
                     await message.ack()
 
@@ -224,26 +221,24 @@ class ApplicationWorker:
                         application_id=application_id,
                         attempts=e.attempts,
                         error=str(e.last_error),
-                        event_type="max_retries_exceeded"
+                        event_type="max_retries_exceeded",
                     )
                     await self._uploader.update_application_status(
                         application_id=application_id,
                         status=ApplicationStatus.FAILED,
-                        error_reason=f"Max retries exceeded: {str(e.last_error)}"
+                        error_reason=f"Max retries exceeded: {str(e.last_error)}",
                     )
                     # Publish to DLQ
                     await application_queue_service.publish_to_dlq(
                         application_id=application_id,
                         error_message=str(e.last_error),
-                        original_message=body
+                        original_message=body,
                     )
                     await message.ack()
 
         except json.JSONDecodeError as e:
             logger.error(
-                "Failed to decode message: {error}",
-                error=str(e),
-                event_type="message_decode_error"
+                "Failed to decode message: {error}", error=str(e), event_type="message_decode_error"
             )
             await message.reject(requeue=False)
 
@@ -251,7 +246,7 @@ class ApplicationWorker:
             logger.exception(
                 "Unexpected error processing message: {error}",
                 error=str(e),
-                event_type="message_processing_error"
+                event_type="message_processing_error",
             )
             await message.reject(requeue=True)
 
@@ -261,7 +256,7 @@ class ApplicationWorker:
         logger.info(
             "Starting ApplicationWorker",
             queue=settings.application_processing_queue,
-            event_type="worker_start"
+            event_type="worker_start",
         )
 
         try:
@@ -269,20 +264,16 @@ class ApplicationWorker:
 
             # Ensure queue exists with durability
             queue = await client.channel.declare_queue(
-                settings.application_processing_queue,
-                durable=True
+                settings.application_processing_queue, durable=True
             )
 
             # Also ensure DLQ exists
-            await client.channel.declare_queue(
-                settings.application_dlq,
-                durable=True
-            )
+            await client.channel.declare_queue(settings.application_dlq, durable=True)
 
             logger.info(
                 "ApplicationWorker connected and consuming from {queue}",
                 queue=settings.application_processing_queue,
-                event_type="worker_consuming"
+                event_type="worker_consuming",
             )
 
             async with queue.iterator() as queue_iter:
@@ -293,18 +284,13 @@ class ApplicationWorker:
 
         except Exception as e:
             logger.error(
-                "ApplicationWorker error: {error}",
-                error=str(e),
-                event_type="worker_error"
+                "ApplicationWorker error: {error}", error=str(e), event_type="worker_error"
             )
             raise
 
     async def stop(self) -> None:
         """Stop the worker gracefully."""
-        logger.info(
-            "Stopping ApplicationWorker",
-            event_type="worker_stop"
-        )
+        logger.info("Stopping ApplicationWorker", event_type="worker_stop")
         self._running = False
         self._shutdown_event.set()
 

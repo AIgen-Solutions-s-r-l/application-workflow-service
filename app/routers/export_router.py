@@ -6,6 +6,7 @@ Provides endpoints for:
 - Excel export
 - Export summary
 """
+
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -20,11 +21,9 @@ router = APIRouter(prefix="/export", tags=["export"])
 @router.get(
     "/summary",
     summary="Get export summary",
-    description="Get a summary of available data for export, including counts and filter options."
+    description="Get a summary of available data for export, including counts and filter options.",
 )
-async def get_export_summary(
-    current_user=Depends(get_current_user)
-):
+async def get_export_summary(current_user=Depends(get_current_user)):
     """
     Get export summary for the authenticated user.
 
@@ -43,7 +42,7 @@ async def get_export_summary(
     description=(
         "Download all applications as a CSV file. "
         "Supports filtering by status, portal, and date range."
-    )
+    ),
 )
 async def export_csv(
     current_user=Depends(get_current_user),
@@ -52,7 +51,7 @@ async def export_csv(
     portal: str | None = Query(default=None, description="Filter by portal"),
     date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
     date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)"),
-    stream: bool = Query(default=False, description="Use streaming for large exports")
+    stream: bool = Query(default=False, description="Use streaming for large exports"),
 ):
     """
     Export applications to CSV format.
@@ -80,16 +79,14 @@ async def export_csv(
                 include_failed=include_failed,
                 portal_filter=portal,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 yield chunk
 
         return StreamingResponse(
             generate(),
             media_type="text/csv",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
 
     # Regular response for smaller datasets
@@ -99,15 +96,13 @@ async def export_csv(
         include_failed=include_failed,
         portal_filter=portal,
         date_from=date_from,
-        date_to=date_to
+        date_to=date_to,
     )
 
     return Response(
         content=csv_content,
         media_type="text/csv",
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}"
-        }
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
@@ -118,7 +113,7 @@ async def export_csv(
         "Download all applications as an Excel file with formatting. "
         "Successful applications are highlighted in green, failed in red. "
         "Supports filtering by status, portal, and date range."
-    )
+    ),
 )
 async def export_excel(
     current_user=Depends(get_current_user),
@@ -126,7 +121,7 @@ async def export_excel(
     include_failed: bool = Query(default=True, description="Include failed applications"),
     portal: str | None = Query(default=None, description="Filter by portal"),
     date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)")
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)"),
 ):
     """
     Export applications to Excel format.
@@ -151,19 +146,14 @@ async def export_excel(
             include_failed=include_failed,
             portal_filter=portal,
             date_from=date_from,
-            date_to=date_to
+            date_to=date_to,
         )
 
         return Response(
             content=excel_content,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={
-                "Content-Disposition": f"attachment; filename={filename}"
-            }
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
         )
 
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to generate Excel export: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to generate Excel export: {str(e)}")

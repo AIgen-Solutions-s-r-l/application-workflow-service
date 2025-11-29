@@ -6,6 +6,7 @@ This module provides:
 - Configurable TTL for stored keys
 - Request fingerprinting for automatic deduplication
 """
+
 import hashlib
 import time
 from collections.abc import Callable
@@ -29,6 +30,7 @@ DEFAULT_TTL_SECONDS = 86400
 
 class IdempotencyRecord(BaseModel):
     """Record of an idempotent request."""
+
     key: str
     status: str  # "pending", "completed", "failed"
     response: dict[str, Any] | None = None
@@ -59,10 +61,7 @@ class InMemoryIdempotencyStore:
             return
 
         cutoff = datetime.utcnow() - timedelta(seconds=self._ttl_seconds)
-        expired_keys = [
-            key for key, record in self._store.items()
-            if record.created_at < cutoff
-        ]
+        expired_keys = [key for key, record in self._store.items() if record.created_at < cutoff]
 
         for key in expired_keys:
             del self._store[key]
@@ -71,7 +70,7 @@ class InMemoryIdempotencyStore:
             logger.info(
                 "Cleaned up {count} expired idempotency keys",
                 count=len(expired_keys),
-                event_type="idempotency_cleanup"
+                event_type="idempotency_cleanup",
             )
 
         self._last_cleanup = now
@@ -117,23 +116,16 @@ class InMemoryIdempotencyStore:
             key=key,
             status="pending",
             created_at=datetime.utcnow(),
-            correlation_id=get_correlation_id()
+            correlation_id=get_correlation_id(),
         )
 
         logger.debug(
-            "Idempotency key {key} set to pending",
-            key=key,
-            event_type="idempotency_pending"
+            "Idempotency key {key} set to pending", key=key, event_type="idempotency_pending"
         )
 
         return True
 
-    def set_completed(
-        self,
-        key: str,
-        response: dict[str, Any],
-        status_code: int
-    ) -> None:
+    def set_completed(self, key: str, response: dict[str, Any], status_code: int) -> None:
         """
         Mark a key as completed with response.
 
@@ -152,7 +144,7 @@ class InMemoryIdempotencyStore:
                 status_code=status_code,
                 created_at=datetime.utcnow(),
                 completed_at=datetime.utcnow(),
-                correlation_id=get_correlation_id()
+                correlation_id=get_correlation_id(),
             )
         else:
             record.status = "completed"
@@ -166,7 +158,7 @@ class InMemoryIdempotencyStore:
             "Idempotency key {key} completed",
             key=key,
             status_code=status_code,
-            event_type="idempotency_completed"
+            event_type="idempotency_completed",
         )
 
     def set_failed(self, key: str, error: str) -> None:
@@ -185,10 +177,7 @@ class InMemoryIdempotencyStore:
             self._store[key] = record
 
         logger.debug(
-            "Idempotency key {key} failed",
-            key=key,
-            error=error,
-            event_type="idempotency_failed"
+            "Idempotency key {key} failed", key=key, error=error, event_type="idempotency_failed"
         )
 
     def delete(self, key: str) -> None:
@@ -207,10 +196,7 @@ def get_idempotency_store() -> InMemoryIdempotencyStore:
 
 
 def generate_request_fingerprint(
-    method: str,
-    path: str,
-    body: bytes | None = None,
-    user_id: str | None = None
+    method: str, path: str, body: bytes | None = None, user_id: str | None = None
 ) -> str:
     """
     Generate a fingerprint for a request.
@@ -230,7 +216,7 @@ def generate_request_fingerprint(
         fingerprint_parts.append(user_id)
 
     if body:
-        fingerprint_parts.append(body.decode('utf-8', errors='ignore'))
+        fingerprint_parts.append(body.decode("utf-8", errors="ignore"))
 
     fingerprint = "|".join(fingerprint_parts)
     return hashlib.sha256(fingerprint.encode()).hexdigest()
@@ -259,6 +245,7 @@ def require_idempotency(func: Callable) -> Callable:
         async def create_application(request: Request, ...):
             ...
     """
+
     @wraps(func)
     async def wrapper(request: Request, *args, **kwargs):
         idempotency_key = get_idempotency_key(request)
@@ -276,11 +263,10 @@ def require_idempotency(func: Callable) -> Callable:
                 logger.warning(
                     "Duplicate request while processing for key {key}",
                     key=idempotency_key,
-                    event_type="idempotency_conflict"
+                    event_type="idempotency_conflict",
                 )
                 raise DuplicateRequestError(
-                    idempotency_key=idempotency_key,
-                    existing_result={"status": "pending"}
+                    idempotency_key=idempotency_key, existing_result={"status": "pending"}
                 )
 
             if existing.status == "completed" and existing.response:
@@ -288,7 +274,7 @@ def require_idempotency(func: Callable) -> Callable:
                 logger.info(
                     "Returning cached response for idempotency key {key}",
                     key=idempotency_key,
-                    event_type="idempotency_cache_hit"
+                    event_type="idempotency_cache_hit",
                 )
                 return existing.response
 
@@ -300,8 +286,7 @@ def require_idempotency(func: Callable) -> Callable:
         if not store.set_pending(idempotency_key):
             # Race condition - key was set by another request
             raise DuplicateRequestError(
-                idempotency_key=idempotency_key,
-                existing_result={"status": "pending"}
+                idempotency_key=idempotency_key, existing_result={"status": "pending"}
             )
 
         try:
@@ -309,7 +294,15 @@ def require_idempotency(func: Callable) -> Callable:
             result = await func(request, *args, **kwargs)
 
             # Store successful result
-            response_dict = result if isinstance(result, dict) else result.model_dump() if hasattr(result, 'model_dump') else {"result": str(result)}
+            response_dict = (
+                result
+                if isinstance(result, dict)
+                else (
+                    result.model_dump()
+                    if hasattr(result, "model_dump")
+                    else {"result": str(result)}
+                )
+            )
             store.set_completed(idempotency_key, response_dict, 200)
 
             return result
@@ -359,14 +352,15 @@ class IdempotencyMiddleware:
             logger.info(
                 "Returning cached response for idempotency key {key}",
                 key=idempotency_key,
-                event_type="idempotency_cache_hit"
+                event_type="idempotency_cache_hit",
             )
 
             from fastapi.responses import JSONResponse
+
             response = JSONResponse(
                 content=existing.response,
                 status_code=existing.status_code or 200,
-                headers={"X-Idempotency-Replayed": "true"}
+                headers={"X-Idempotency-Replayed": "true"},
             )
             await response(scope, receive, send)
             return

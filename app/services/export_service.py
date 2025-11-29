@@ -6,6 +6,7 @@ Provides:
 - Excel export with formatting
 - Streaming exports for large datasets
 """
+
 import csv
 import io
 from collections.abc import AsyncGenerator
@@ -30,7 +31,7 @@ class ExportService:
         "status",
         "created_at",
         "applied_at",
-        "error_reason"
+        "error_reason",
     ]
 
     FIELD_LABELS = {
@@ -42,7 +43,7 @@ class ExportService:
         "status": "Status",
         "created_at": "Created At",
         "applied_at": "Applied At",
-        "error_reason": "Error Reason"
+        "error_reason": "Error Reason",
     }
 
     async def export_to_csv(
@@ -52,7 +53,7 @@ class ExportService:
         include_failed: bool = True,
         portal_filter: str | None = None,
         date_from: datetime | None = None,
-        date_to: datetime | None = None
+        date_to: datetime | None = None,
     ) -> str:
         """
         Export applications to CSV format.
@@ -83,7 +84,7 @@ class ExportService:
                 status="success",
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 writer.writerow(row)
 
@@ -94,7 +95,7 @@ class ExportService:
                 status="failed",
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 writer.writerow(row)
 
@@ -107,7 +108,7 @@ class ExportService:
         include_failed: bool = True,
         portal_filter: str | None = None,
         date_from: datetime | None = None,
-        date_to: datetime | None = None
+        date_to: datetime | None = None,
     ) -> AsyncGenerator[str, None]:
         """
         Stream applications as CSV for large datasets.
@@ -138,7 +139,7 @@ class ExportService:
                 status="success",
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 output = io.StringIO()
                 writer = csv.writer(output)
@@ -152,7 +153,7 @@ class ExportService:
                 status="failed",
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 output = io.StringIO()
                 writer = csv.writer(output)
@@ -166,7 +167,7 @@ class ExportService:
         include_failed: bool = True,
         portal_filter: str | None = None,
         date_from: datetime | None = None,
-        date_to: datetime | None = None
+        date_to: datetime | None = None,
     ) -> bytes:
         """
         Export applications to Excel format.
@@ -194,9 +195,9 @@ class ExportService:
                 include_failed=include_failed,
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             )
-            return csv_content.encode('utf-8')
+            return csv_content.encode("utf-8")
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -226,7 +227,7 @@ class ExportService:
                 status="success",
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 for col, value in enumerate(row_data, 1):
                     cell = ws.cell(row=row_num, column=col, value=value)
@@ -240,7 +241,7 @@ class ExportService:
                 status="failed",
                 portal_filter=portal_filter,
                 date_from=date_from,
-                date_to=date_to
+                date_to=date_to,
             ):
                 for col, value in enumerate(row_data, 1):
                     cell = ws.cell(row=row_num, column=col, value=value)
@@ -250,9 +251,7 @@ class ExportService:
         # Auto-adjust column widths
         for col in range(1, len(headers) + 1):
             column_letter = get_column_letter(col)
-            max_length = max(
-                len(str(cell.value or "")) for cell in ws[column_letter]
-            )
+            max_length = max(len(str(cell.value or "")) for cell in ws[column_letter])
             ws.column_dimensions[column_letter].width = min(max_length + 2, 50)
 
         # Freeze header row
@@ -272,7 +271,7 @@ class ExportService:
         status: str,
         portal_filter: str | None = None,
         date_from: datetime | None = None,
-        date_to: datetime | None = None
+        date_to: datetime | None = None,
     ) -> AsyncGenerator[list, None]:
         """
         Fetch applications from a collection and yield rows.
@@ -333,10 +332,7 @@ class ExportService:
 
             yield row
 
-    async def get_export_summary(
-        self,
-        user_id: str
-    ) -> dict:
+    async def get_export_summary(self, user_id: str) -> dict:
         """
         Get a summary of exportable data.
 
@@ -366,7 +362,7 @@ class ExportService:
             "successful_applications": success_count,
             "failed_applications": failed_count,
             "available_portals": sorted(portals),
-            "export_formats": ["csv", "excel"]
+            "export_formats": ["csv", "excel"],
         }
 
 

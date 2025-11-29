@@ -1,6 +1,7 @@
 """
 Application uploader service for managing job application submissions.
 """
+
 from datetime import datetime
 
 from app.core.config import settings
@@ -19,11 +20,7 @@ class ApplicationUploaderService:
     """
 
     async def insert_application_jobs(
-        self,
-        user_id: str,
-        job_list_to_apply: list,
-        cv_id: str = None,
-        style: str = None
+        self, user_id: str, job_list_to_apply: list, cv_id: str = None, style: str = None
     ) -> str:
         """
         Insert a new application with initial 'pending' status.
@@ -60,7 +57,7 @@ class ApplicationUploaderService:
                 "retries_left": 5,
                 "cv_id": cv_id,
                 "style": style,
-                "error_reason": None
+                "error_reason": None,
             }
 
             result = await applications_collection.insert_one(application_doc)
@@ -70,7 +67,7 @@ class ApplicationUploaderService:
                 await notification_publisher.publish_application_submitted(
                     application_id=application_id,
                     user_id=str(user_id),
-                    job_count=len(job_list_to_apply)
+                    job_count=len(job_list_to_apply),
                 )
 
                 # Publish to processing queue if async processing is enabled
@@ -80,7 +77,7 @@ class ApplicationUploaderService:
                         user_id=str(user_id),
                         job_count=len(job_list_to_apply),
                         cv_id=cv_id,
-                        style=style
+                        style=style,
                     )
 
             return application_id
@@ -89,10 +86,7 @@ class ApplicationUploaderService:
             raise DatabaseOperationError(f"Error inserting application data: {str(e)}")
 
     async def update_application_status(
-        self,
-        application_id: str,
-        status: ApplicationStatus,
-        error_reason: str | None = None
+        self, application_id: str, status: ApplicationStatus, error_reason: str | None = None
     ) -> bool:
         """
         Update the status of an application.
@@ -112,12 +106,7 @@ class ApplicationUploaderService:
             from bson import ObjectId
 
             now = datetime.utcnow()
-            update_doc = {
-                "$set": {
-                    "status": status.value,
-                    "updated_at": now
-                }
-            }
+            update_doc = {"$set": {"status": status.value, "updated_at": now}}
 
             # Set processed_at for terminal states
             if status in (ApplicationStatus.SUCCESS, ApplicationStatus.FAILED):
@@ -128,22 +117,20 @@ class ApplicationUploaderService:
                 update_doc["$set"]["error_reason"] = error_reason
 
             result = await applications_collection.update_one(
-                {"_id": ObjectId(application_id)},
-                update_doc
+                {"_id": ObjectId(application_id)}, update_doc
             )
 
             if result.modified_count > 0:
                 # Fetch user_id for notification
                 doc = await applications_collection.find_one(
-                    {"_id": ObjectId(application_id)},
-                    {"user_id": 1, "jobs": 1}
+                    {"_id": ObjectId(application_id)}, {"user_id": 1, "jobs": 1}
                 )
                 if doc:
                     await notification_publisher.publish_status_changed(
                         application_id=application_id,
                         user_id=str(doc.get("user_id")),
                         status=status.value,
-                        job_count=len(doc.get("jobs", []))
+                        job_count=len(doc.get("jobs", [])),
                     )
 
             return result.modified_count > 0
@@ -151,11 +138,7 @@ class ApplicationUploaderService:
         except Exception as e:
             raise DatabaseOperationError(f"Error updating application status: {str(e)}")
 
-    async def get_application_status(
-        self,
-        application_id: str,
-        user_id: str
-    ) -> dict | None:
+    async def get_application_status(self, application_id: str, user_id: str) -> dict | None:
         """
         Get the status of an application.
 
@@ -180,8 +163,8 @@ class ApplicationUploaderService:
                     "updated_at": 1,
                     "processed_at": 1,
                     "jobs": 1,
-                    "error_reason": 1
-                }
+                    "error_reason": 1,
+                },
             )
 
             if not doc:
@@ -194,7 +177,7 @@ class ApplicationUploaderService:
                 "updated_at": doc.get("updated_at"),
                 "processed_at": doc.get("processed_at"),
                 "job_count": len(doc.get("jobs", [])),
-                "error_reason": doc.get("error_reason")
+                "error_reason": doc.get("error_reason"),
             }
 
         except Exception as e:

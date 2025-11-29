@@ -4,6 +4,7 @@ Security headers middleware for HTTP response hardening.
 Implements OWASP security headers recommendations to protect against
 common web vulnerabilities.
 """
+
 from collections.abc import Callable
 
 from fastapi import Request, Response
@@ -105,7 +106,7 @@ class CORSSecurityMiddleware(BaseHTTPMiddleware):
         allowed_headers: list[str] = None,
         expose_headers: list[str] = None,
         allow_credentials: bool = False,
-        max_age: int = 600
+        max_age: int = 600,
     ):
         """
         Initialize CORS middleware.
@@ -122,19 +123,22 @@ class CORSSecurityMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         self.allowed_origins = set(allowed_origins or [])
         self.allowed_methods = set(allowed_methods or ["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-        self.allowed_headers = set(allowed_headers or [
-            "Authorization",
-            "Content-Type",
-            "X-Correlation-ID",
-            "X-Idempotency-Key",
-            "X-Request-ID"
-        ])
+        self.allowed_headers = set(
+            allowed_headers
+            or [
+                "Authorization",
+                "Content-Type",
+                "X-Correlation-ID",
+                "X-Idempotency-Key",
+                "X-Request-ID",
+            ]
+        )
         self.expose_headers = expose_headers or [
             "X-Correlation-ID",
             "X-Request-ID",
             "X-RateLimit-Limit",
             "X-RateLimit-Remaining",
-            "X-RateLimit-Reset"
+            "X-RateLimit-Reset",
         ]
         self.allow_credentials = allow_credentials
         self.max_age = max_age

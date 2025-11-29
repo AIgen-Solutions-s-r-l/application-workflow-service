@@ -6,6 +6,7 @@ Provides:
 - Validation helpers for common patterns
 - File upload validation
 """
+
 import html
 import re
 from pathlib import Path
@@ -13,36 +14,42 @@ from pathlib import Path
 from fastapi import HTTPException, UploadFile
 
 # Patterns for validation
-SAFE_STRING_PATTERN = re.compile(r'^[\w\s\-.,@#&()\'\"!?:;/\[\]{}+=*%$€£¥]+$', re.UNICODE)
-EMAIL_PATTERN = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-UUID_PATTERN = re.compile(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')
-OBJECT_ID_PATTERN = re.compile(r'^[0-9a-fA-F]{24}$')
+SAFE_STRING_PATTERN = re.compile(r"^[\w\s\-.,@#&()\'\"!?:;/\[\]{}+=*%$€£¥]+$", re.UNICODE)
+EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+UUID_PATTERN = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+OBJECT_ID_PATTERN = re.compile(r"^[0-9a-fA-F]{24}$")
 
 # Dangerous patterns to detect potential attacks
 SQL_INJECTION_PATTERNS = [
-    re.compile(r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b)", re.IGNORECASE),
+    re.compile(
+        r"(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|ALTER|CREATE|TRUNCATE)\b)", re.IGNORECASE
+    ),
     re.compile(r"(--|;|/\*|\*/|@@|@)", re.IGNORECASE),
     re.compile(r"(\bOR\b.*=.*\bOR\b)", re.IGNORECASE),
 ]
 
 NOSQL_INJECTION_PATTERNS = [
-    re.compile(r'(\$where|\$gt|\$lt|\$ne|\$regex|\$or|\$and|\$not|\$nor|\$exists|\$type)', re.IGNORECASE),
-    re.compile(r'(\{.*\$.*\})', re.IGNORECASE),
+    re.compile(
+        r"(\$where|\$gt|\$lt|\$ne|\$regex|\$or|\$and|\$not|\$nor|\$exists|\$type)", re.IGNORECASE
+    ),
+    re.compile(r"(\{.*\$.*\})", re.IGNORECASE),
 ]
 
 XSS_PATTERNS = [
-    re.compile(r'<script[^>]*>.*?</script>', re.IGNORECASE | re.DOTALL),
-    re.compile(r'javascript:', re.IGNORECASE),
-    re.compile(r'on\w+\s*=', re.IGNORECASE),
-    re.compile(r'<\s*img[^>]+src\s*=', re.IGNORECASE),
-    re.compile(r'<\s*iframe', re.IGNORECASE),
+    re.compile(r"<script[^>]*>.*?</script>", re.IGNORECASE | re.DOTALL),
+    re.compile(r"javascript:", re.IGNORECASE),
+    re.compile(r"on\w+\s*=", re.IGNORECASE),
+    re.compile(r"<\s*img[^>]+src\s*=", re.IGNORECASE),
+    re.compile(r"<\s*iframe", re.IGNORECASE),
 ]
 
 PATH_TRAVERSAL_PATTERNS = [
-    re.compile(r'\.\./', re.IGNORECASE),
-    re.compile(r'\.\.\\', re.IGNORECASE),
-    re.compile(r'%2e%2e%2f', re.IGNORECASE),
-    re.compile(r'%2e%2e/', re.IGNORECASE),
+    re.compile(r"\.\./", re.IGNORECASE),
+    re.compile(r"\.\.\\", re.IGNORECASE),
+    re.compile(r"%2e%2e%2f", re.IGNORECASE),
+    re.compile(r"%2e%2e/", re.IGNORECASE),
 ]
 
 
@@ -80,7 +87,7 @@ def sanitize_string(value: str, max_length: int = 10000) -> str:
     sanitized = html.escape(value)
 
     # Remove null bytes
-    sanitized = sanitized.replace('\x00', '')
+    sanitized = sanitized.replace("\x00", "")
 
     return sanitized
 
@@ -104,13 +111,13 @@ def sanitize_html(value: str, max_length: int = 50000) -> str:
         raise InputValidationError("input", f"Input exceeds maximum length of {max_length}")
 
     # Remove HTML tags
-    clean = re.sub(r'<[^>]+>', '', value)
+    clean = re.sub(r"<[^>]+>", "", value)
 
     # HTML encode remaining content
     clean = html.escape(clean)
 
     # Remove null bytes
-    clean = clean.replace('\x00', '')
+    clean = clean.replace("\x00", "")
 
     return clean
 
@@ -156,7 +163,7 @@ def validate_and_sanitize(
     field_name: str,
     max_length: int = 10000,
     allow_html: bool = False,
-    check_injection: bool = True
+    check_injection: bool = True,
 ) -> str:
     """
     Validate and sanitize input with comprehensive checks.
@@ -181,10 +188,7 @@ def validate_and_sanitize(
     if check_injection:
         injection_type = detect_injection(value)
         if injection_type:
-            raise InputValidationError(
-                field_name,
-                f"Potential {injection_type} attack detected"
-            )
+            raise InputValidationError(field_name, f"Potential {injection_type} attack detected")
 
     # Sanitize based on type
     if allow_html:
@@ -239,9 +243,7 @@ def validate_object_id(value: str) -> bool:
 
 
 def validate_file_upload(
-    file: UploadFile,
-    allowed_types: list[str],
-    max_size_mb: float = 10.0
+    file: UploadFile, allowed_types: list[str], max_size_mb: float = 10.0
 ) -> None:
     """
     Validate uploaded file.
@@ -257,26 +259,19 @@ def validate_file_upload(
     # Check content type
     if file.content_type not in allowed_types:
         raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+            status_code=400, detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
         )
 
     # Check filename for path traversal
     if file.filename:
         if detect_injection(file.filename):
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid filename"
-            )
+            raise HTTPException(status_code=400, detail="Invalid filename")
 
         # Check for dangerous extensions
-        dangerous_extensions = {'.exe', '.bat', '.cmd', '.sh', '.ps1', '.vbs', '.js'}
+        dangerous_extensions = {".exe", ".bat", ".cmd", ".sh", ".ps1", ".vbs", ".js"}
         file_ext = Path(file.filename).suffix.lower()
         if file_ext in dangerous_extensions:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File type not allowed: {file_ext}"
-            )
+            raise HTTPException(status_code=400, detail=f"File type not allowed: {file_ext}")
 
 
 async def validate_file_size(file: UploadFile, max_size_mb: float = 10.0) -> bytes:
@@ -304,8 +299,7 @@ async def validate_file_size(file: UploadFile, max_size_mb: float = 10.0) -> byt
         contents += chunk
         if len(contents) > max_size_bytes:
             raise HTTPException(
-                status_code=413,
-                detail=f"File too large. Maximum size: {max_size_mb}MB"
+                status_code=413, detail=f"File too large. Maximum size: {max_size_mb}MB"
             )
 
     # Reset file position
@@ -314,11 +308,7 @@ async def validate_file_size(file: UploadFile, max_size_mb: float = 10.0) -> byt
     return contents
 
 
-def validate_pagination_params(
-    limit: int,
-    max_limit: int = 100,
-    min_limit: int = 1
-) -> int:
+def validate_pagination_params(limit: int, max_limit: int = 100, min_limit: int = 1) -> int:
     """
     Validate pagination limit parameter.
 
@@ -350,7 +340,7 @@ def sanitize_mongodb_query(query: dict) -> dict:
     Raises:
         InputValidationError: If dangerous operators are detected.
     """
-    dangerous_operators = {'$where', '$expr', '$function'}
+    dangerous_operators = {"$where", "$expr", "$function"}
 
     def check_dict(d: dict, path: str = "") -> dict:
         result = {}
@@ -359,10 +349,7 @@ def sanitize_mongodb_query(query: dict) -> dict:
 
             # Check for dangerous operators
             if key in dangerous_operators:
-                raise InputValidationError(
-                    current_path,
-                    f"Operator '{key}' is not allowed"
-                )
+                raise InputValidationError(current_path, f"Operator '{key}' is not allowed")
 
             # Recursively check nested dicts
             if isinstance(value, dict):

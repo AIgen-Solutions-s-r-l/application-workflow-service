@@ -7,6 +7,7 @@ Provides structured logging for:
 - Data access events (read, write, delete)
 - Administrative actions
 """
+
 import json
 from dataclasses import asdict, dataclass
 from datetime import datetime
@@ -18,6 +19,7 @@ from app.log.logging import logger
 
 class AuditEventType(str, Enum):
     """Types of audit events."""
+
     # Authentication events
     AUTH_LOGIN_SUCCESS = "auth.login.success"
     AUTH_LOGIN_FAILURE = "auth.login.failure"
@@ -55,6 +57,7 @@ class AuditEventType(str, Enum):
 
 class AuditSeverity(str, Enum):
     """Severity levels for audit events."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -64,6 +67,7 @@ class AuditSeverity(str, Enum):
 @dataclass
 class AuditEvent:
     """Structured audit event."""
+
     event_type: AuditEventType
     timestamp: str
     correlation_id: str | None
@@ -110,12 +114,12 @@ class AuditLogger:
             AuditSeverity.INFO: self._logger.info,
             AuditSeverity.WARNING: self._logger.warning,
             AuditSeverity.ERROR: self._logger.error,
-            AuditSeverity.CRITICAL: self._logger.critical
+            AuditSeverity.CRITICAL: self._logger.critical,
         }.get(event.severity, self._logger.info)
 
         log_method(
             f"AUDIT: {event.event_type.value} - {event.action}",
-            extra={"audit_event": event.to_dict()}
+            extra={"audit_event": event.to_dict()},
         )
 
     def _create_event(
@@ -130,7 +134,7 @@ class AuditLogger:
         resource_type: str | None = None,
         resource_id: str | None = None,
         details: dict | None = None,
-        error_message: str | None = None
+        error_message: str | None = None,
     ) -> AuditEvent:
         """Create an audit event."""
         return AuditEvent(
@@ -146,15 +150,12 @@ class AuditLogger:
             outcome=outcome,
             severity=severity,
             details=details,
-            error_message=error_message
+            error_message=error_message,
         )
 
     # Authentication events
     def log_auth_success(
-        self,
-        user_id: str,
-        ip_address: str | None = None,
-        user_agent: str | None = None
+        self, user_id: str, ip_address: str | None = None, user_agent: str | None = None
     ) -> None:
         """Log successful authentication."""
         event = self._create_event(
@@ -162,7 +163,7 @@ class AuditLogger:
             action="User authenticated successfully",
             user_id=user_id,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
         self._log(event)
 
@@ -171,7 +172,7 @@ class AuditLogger:
         user_id: str | None = None,
         ip_address: str | None = None,
         user_agent: str | None = None,
-        reason: str | None = None
+        reason: str | None = None,
     ) -> None:
         """Log failed authentication attempt."""
         event = self._create_event(
@@ -182,15 +183,11 @@ class AuditLogger:
             user_id=user_id,
             ip_address=ip_address,
             user_agent=user_agent,
-            error_message=reason
+            error_message=reason,
         )
         self._log(event)
 
-    def log_token_invalid(
-        self,
-        ip_address: str | None = None,
-        reason: str | None = None
-    ) -> None:
+    def log_token_invalid(self, ip_address: str | None = None, reason: str | None = None) -> None:
         """Log invalid token usage."""
         event = self._create_event(
             event_type=AuditEventType.AUTH_TOKEN_INVALID,
@@ -198,7 +195,7 @@ class AuditLogger:
             outcome="failure",
             severity=AuditSeverity.WARNING,
             ip_address=ip_address,
-            error_message=reason
+            error_message=reason,
         )
         self._log(event)
 
@@ -209,7 +206,7 @@ class AuditLogger:
         resource_type: str,
         resource_id: str,
         reason: str | None = None,
-        ip_address: str | None = None
+        ip_address: str | None = None,
     ) -> None:
         """Log access denied event."""
         event = self._create_event(
@@ -221,17 +218,13 @@ class AuditLogger:
             ip_address=ip_address,
             resource_type=resource_type,
             resource_id=resource_id,
-            error_message=reason
+            error_message=reason,
         )
         self._log(event)
 
     # Application events
     def log_application_created(
-        self,
-        user_id: str,
-        application_id: str,
-        job_count: int,
-        ip_address: str | None = None
+        self, user_id: str, application_id: str, job_count: int, ip_address: str | None = None
     ) -> None:
         """Log application creation."""
         event = self._create_event(
@@ -241,16 +234,12 @@ class AuditLogger:
             ip_address=ip_address,
             resource_type="application",
             resource_id=application_id,
-            details={"job_count": job_count}
+            details={"job_count": job_count},
         )
         self._log(event)
 
     def log_application_status_changed(
-        self,
-        user_id: str,
-        application_id: str,
-        old_status: str,
-        new_status: str
+        self, user_id: str, application_id: str, old_status: str, new_status: str
     ) -> None:
         """Log application status change."""
         event = self._create_event(
@@ -259,15 +248,12 @@ class AuditLogger:
             user_id=user_id,
             resource_type="application",
             resource_id=application_id,
-            details={"old_status": old_status, "new_status": new_status}
+            details={"old_status": old_status, "new_status": new_status},
         )
         self._log(event)
 
     def log_application_accessed(
-        self,
-        user_id: str,
-        application_id: str,
-        ip_address: str | None = None
+        self, user_id: str, application_id: str, ip_address: str | None = None
     ) -> None:
         """Log application data access."""
         event = self._create_event(
@@ -276,16 +262,13 @@ class AuditLogger:
             user_id=user_id,
             ip_address=ip_address,
             resource_type="application",
-            resource_id=application_id
+            resource_id=application_id,
         )
         self._log(event)
 
     # Resume events
     def log_resume_uploaded(
-        self,
-        user_id: str,
-        resume_id: str,
-        ip_address: str | None = None
+        self, user_id: str, resume_id: str, ip_address: str | None = None
     ) -> None:
         """Log resume upload."""
         event = self._create_event(
@@ -294,16 +277,13 @@ class AuditLogger:
             user_id=user_id,
             ip_address=ip_address,
             resource_type="resume",
-            resource_id=resume_id
+            resource_id=resume_id,
         )
         self._log(event)
 
     # Security events
     def log_rate_limit_exceeded(
-        self,
-        user_id: str | None = None,
-        ip_address: str | None = None,
-        endpoint: str | None = None
+        self, user_id: str | None = None, ip_address: str | None = None, endpoint: str | None = None
     ) -> None:
         """Log rate limit exceeded."""
         event = self._create_event(
@@ -313,7 +293,7 @@ class AuditLogger:
             severity=AuditSeverity.WARNING,
             user_id=user_id,
             ip_address=ip_address,
-            details={"endpoint": endpoint}
+            details={"endpoint": endpoint},
         )
         self._log(event)
 
@@ -322,7 +302,7 @@ class AuditLogger:
         user_id: str | None = None,
         ip_address: str | None = None,
         field: str | None = None,
-        reason: str | None = None
+        reason: str | None = None,
     ) -> None:
         """Log input validation failure."""
         event = self._create_event(
@@ -333,7 +313,7 @@ class AuditLogger:
             user_id=user_id,
             ip_address=ip_address,
             details={"field": field},
-            error_message=reason
+            error_message=reason,
         )
         self._log(event)
 
@@ -342,7 +322,7 @@ class AuditLogger:
         user_id: str | None = None,
         ip_address: str | None = None,
         description: str = "",
-        details: dict | None = None
+        details: dict | None = None,
     ) -> None:
         """Log suspicious activity."""
         event = self._create_event(
@@ -352,7 +332,7 @@ class AuditLogger:
             severity=AuditSeverity.ERROR,
             user_id=user_id,
             ip_address=ip_address,
-            details=details
+            details=details,
         )
         self._log(event)
 

@@ -7,6 +7,7 @@ This module provides correlation IDs that propagate through:
 - Queue messages
 - Database operations
 """
+
 import uuid
 from collections.abc import Callable
 from contextvars import ContextVar
@@ -17,7 +18,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.log.logging import logger
 
 # Context variable to store correlation ID for the current request
-correlation_id_var: ContextVar[str | None] = ContextVar('correlation_id', default=None)
+correlation_id_var: ContextVar[str | None] = ContextVar("correlation_id", default=None)
 
 # Header names for correlation ID
 CORRELATION_ID_HEADER = "X-Correlation-ID"
@@ -80,7 +81,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             correlation_id=correlation_id,
             method=request.method,
             path=request.url.path,
-            event_type="request_start"
+            event_type="request_start",
         )
 
         try:
@@ -97,7 +98,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 path=request.url.path,
                 status_code=response.status_code,
-                event_type="request_complete"
+                event_type="request_complete",
             )
 
             return response
@@ -110,7 +111,7 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
                 method=request.method,
                 path=request.url.path,
                 error=str(e),
-                event_type="request_error"
+                event_type="request_error",
             )
             raise
 

@@ -84,7 +84,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        # Python 3.12 excluded due to opentelemetry-exporter-otlp version constraints
+        python-version: ["3.11"]
 
     services:
       mongodb:

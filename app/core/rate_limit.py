@@ -4,6 +4,7 @@ Rate limiting for API endpoints.
 This module provides per-user rate limiting to protect against abuse
 while maintaining good UX for legitimate users.
 """
+
 import time
 from collections.abc import Callable
 from datetime import datetime
@@ -29,8 +30,8 @@ class RateLimitExceeded(HTTPException):
                 "Retry-After": str(retry_after),
                 "X-RateLimit-Limit": str(limit),
                 "X-RateLimit-Remaining": "0",
-                "X-RateLimit-Reset": str(int(reset_at.timestamp()))
-            }
+                "X-RateLimit-Reset": str(int(reset_at.timestamp())),
+            },
         )
 
 
@@ -61,12 +62,7 @@ class InMemoryRateLimiter:
         count = int(parts[0])
         period = parts[1].lower()
 
-        period_seconds = {
-            "second": 1,
-            "minute": 60,
-            "hour": 3600,
-            "day": 86400
-        }.get(period)
+        period_seconds = {"second": 1, "minute": 60, "hour": 3600, "day": 86400}.get(period)
 
         if period_seconds is None:
             raise ValueError(f"Invalid period: {period}")
@@ -82,8 +78,7 @@ class InMemoryRateLimiter:
         cutoff = now - 86400  # Keep entries for 24 hours max
         for user_id in list(self._windows.keys()):
             self._windows[user_id] = [
-                (ts, count) for ts, count in self._windows[user_id]
-                if ts > cutoff
+                (ts, count) for ts, count in self._windows[user_id] if ts > cutoff
             ]
             if not self._windows[user_id]:
                 del self._windows[user_id]
@@ -91,10 +86,7 @@ class InMemoryRateLimiter:
         self._last_cleanup = now
 
     def check_rate_limit(
-        self,
-        user_id: str,
-        limit_str: str,
-        increment: int = 1
+        self, user_id: str, limit_str: str, increment: int = 1
     ) -> tuple[bool, int, int, datetime]:
         """
         Check if a request is within rate limits.
@@ -118,10 +110,7 @@ class InMemoryRateLimiter:
             self._windows[user_id] = []
 
         # Filter to current window
-        current_window = [
-            (ts, count) for ts, count in self._windows[user_id]
-            if ts > window_start
-        ]
+        current_window = [(ts, count) for ts, count in self._windows[user_id] if ts > window_start]
 
         # Count requests in window
         total_requests = sum(count for _, count in current_window)
@@ -148,12 +137,7 @@ class InMemoryRateLimiter:
 
         return True, remaining - increment, max_requests, reset_at
 
-    def get_headers(
-        self,
-        remaining: int,
-        limit: int,
-        reset_at: datetime
-    ) -> dict:
+    def get_headers(self, remaining: int, limit: int, reset_at: datetime) -> dict:
         """
         Get rate limit headers for response.
 
@@ -168,7 +152,7 @@ class InMemoryRateLimiter:
         return {
             "X-RateLimit-Limit": str(limit),
             "X-RateLimit-Remaining": str(remaining),
-            "X-RateLimit-Reset": str(int(reset_at.timestamp()))
+            "X-RateLimit-Reset": str(int(reset_at.timestamp())),
         }
 
 
@@ -224,7 +208,14 @@ class RateLimitMiddleware:
         request = Request(scope, receive)
 
         # Skip rate limiting for health checks and metrics
-        if request.url.path in ["/health", "/health/live", "/health/ready", "/healthcheck", "/metrics", "/"]:
+        if request.url.path in [
+            "/health",
+            "/health/live",
+            "/health/ready",
+            "/healthcheck",
+            "/metrics",
+            "/",
+        ]:
             await self.app(scope, receive, send)
             return
 
@@ -232,8 +223,7 @@ class RateLimitMiddleware:
         limiter = get_rate_limiter()
 
         allowed, remaining, limit, reset_at = limiter.check_rate_limit(
-            user_id=user_id,
-            limit_str=settings.rate_limit_requests
+            user_id=user_id, limit_str=settings.rate_limit_requests
         )
 
         if not allowed:
@@ -244,7 +234,7 @@ class RateLimitMiddleware:
                 "Rate limit exceeded for {user_id}",
                 user_id=user_id,
                 path=request.url.path,
-                event_type="rate_limit_exceeded"
+                event_type="rate_limit_exceeded",
             )
 
             response = JSONResponse(
@@ -252,14 +242,14 @@ class RateLimitMiddleware:
                 content={
                     "detail": f"Rate limit exceeded. Try again in {retry_after} seconds.",
                     "limit": limit,
-                    "reset_at": reset_at.isoformat()
+                    "reset_at": reset_at.isoformat(),
                 },
                 headers={
                     "Retry-After": str(retry_after),
                     "X-RateLimit-Limit": str(limit),
                     "X-RateLimit-Remaining": "0",
-                    "X-RateLimit-Reset": str(int(reset_at.timestamp()))
-                }
+                    "X-RateLimit-Reset": str(int(reset_at.timestamp())),
+                },
             )
 
             await response(scope, receive, send)
@@ -291,6 +281,7 @@ def rate_limit(limit_str: str = None):
     Args:
         limit_str: Limit string like "100/hour" (default from config).
     """
+
     def decorator(func: Callable) -> Callable:
         async def wrapper(request: Request, *args, **kwargs):
             if not settings.rate_limit_enabled:
@@ -301,8 +292,7 @@ def rate_limit(limit_str: str = None):
             limit = limit_str or settings.rate_limit_applications
 
             allowed, remaining, max_limit, reset_at = limiter.check_rate_limit(
-                user_id=user_id,
-                limit_str=limit
+                user_id=user_id, limit_str=limit
             )
 
             if not allowed:
@@ -313,19 +303,13 @@ def rate_limit(limit_str: str = None):
                     "Rate limit exceeded for {user_id} on {endpoint}",
                     user_id=user_id,
                     endpoint=func.__name__,
-                    event_type="rate_limit_exceeded"
+                    event_type="rate_limit_exceeded",
                 )
 
-                raise RateLimitExceeded(
-                    limit=max_limit,
-                    reset_at=reset_at,
-                    retry_after=retry_after
-                )
+                raise RateLimitExceeded(limit=max_limit, reset_at=reset_at, retry_after=retry_after)
 
             # Store headers for response
-            request.state.rate_limit_headers = limiter.get_headers(
-                remaining, max_limit, reset_at
-            )
+            request.state.rate_limit_headers = limiter.get_headers(remaining, max_limit, reset_at)
 
             return await func(request, *args, **kwargs)
 

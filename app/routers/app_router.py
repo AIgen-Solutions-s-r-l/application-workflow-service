@@ -6,6 +6,7 @@ This module provides endpoints for:
 - Checking application status
 - Retrieving successful and failed applications with pagination
 """
+
 import json
 from datetime import datetime
 
@@ -46,6 +47,7 @@ pdf_resume_service = PdfResumeService()
 # Application Submission
 # -----------------------------------------------------------------------------
 
+
 @router.post(
     "/applications",
     summary="Submit Jobs and Save Application",
@@ -53,7 +55,7 @@ pdf_resume_service = PdfResumeService()
         "Receives a list of jobs (JSON string) and an optional PDF resume. "
         "Returns a tracking ID for status monitoring."
     ),
-    response_model=ApplicationSubmitResponse
+    response_model=ApplicationSubmitResponse,
 )
 async def submit_jobs_and_save_application(
     jobs: str = Form(...),
@@ -79,15 +81,9 @@ async def submit_jobs_and_save_application(
     try:
         job_request = JobApplicationRequest.model_validate_json(jobs)
     except json.JSONDecodeError as json_err:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid JSON: {str(json_err)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(json_err)}")
     except ValueError as val_err:
-        raise HTTPException(
-            status_code=422,
-            detail=f"Invalid jobs data: {str(val_err)}"
-        )
+        raise HTTPException(status_code=422, detail=f"Invalid jobs data: {str(val_err)}")
 
     # Convert job items to dictionaries
     jobs_to_apply_dicts = [job.model_dump() for job in job_request.jobs]
@@ -96,63 +92,48 @@ async def submit_jobs_and_save_application(
     cv_id = None
     if cv is not None:
         if cv.content_type != "application/pdf":
-            raise HTTPException(
-                status_code=400,
-                detail="Uploaded file must be a PDF."
-            )
+            raise HTTPException(status_code=400, detail="Uploaded file must be a PDF.")
         pdf_bytes = await cv.read()
         try:
             cv_id = await pdf_resume_service.store_pdf_resume(pdf_bytes)
         except DatabaseOperationError as db_err:
             raise HTTPException(
-                status_code=500,
-                detail=f"Failed to store PDF resume: {str(db_err)}"
+                status_code=500, detail=f"Failed to store PDF resume: {str(db_err)}"
             )
 
     # Insert the application
     try:
         application_id = await application_uploader.insert_application_jobs(
-            user_id=user_id,
-            job_list_to_apply=jobs_to_apply_dicts,
-            cv_id=cv_id,
-            style=style
+            user_id=user_id, job_list_to_apply=jobs_to_apply_dicts, cv_id=cv_id, style=style
         )
 
         if not application_id:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to create application"
-            )
+            raise HTTPException(status_code=500, detail="Failed to create application")
 
         return ApplicationSubmitResponse(
             application_id=application_id,
             status=ApplicationStatus.PENDING,
             status_url=f"/applications/{application_id}/status",
             job_count=len(jobs_to_apply_dicts),
-            created_at=datetime.utcnow()
+            created_at=datetime.utcnow(),
         )
 
     except DatabaseOperationError as db_err:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to save application: {str(db_err)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to save application: {str(db_err)}")
 
 
 # -----------------------------------------------------------------------------
 # Application Status
 # -----------------------------------------------------------------------------
 
+
 @router.get(
     "/applications/{application_id}/status",
     summary="Get application status",
     description="Get the current status of a specific application.",
-    response_model=ApplicationStatusResponse
+    response_model=ApplicationStatusResponse,
 )
-async def get_application_status(
-    application_id: str,
-    current_user=Depends(get_current_user)
-):
+async def get_application_status(application_id: str, current_user=Depends(get_current_user)):
     """
     Get the status of a specific application.
 
@@ -165,15 +146,11 @@ async def get_application_status(
     """
     try:
         status_data = await application_uploader.get_application_status(
-            application_id=application_id,
-            user_id=current_user
+            application_id=application_id, user_id=current_user
         )
 
         if not status_data:
-            raise HTTPException(
-                status_code=404,
-                detail="Application not found"
-            )
+            raise HTTPException(status_code=404, detail="Application not found")
 
         return ApplicationStatusResponse(**status_data)
 
@@ -182,17 +159,17 @@ async def get_application_status(
             "Failed to fetch application status",
             application_id=application_id,
             user=current_user,
-            error=str(db_err)
+            error=str(db_err),
         )
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch application status: {str(db_err)}"
+            status_code=500, detail=f"Failed to fetch application status: {str(db_err)}"
         )
 
 
 # -----------------------------------------------------------------------------
 # Helper Functions
 # -----------------------------------------------------------------------------
+
 
 def apply_filters(content: dict, filters: FilterParams) -> dict:
     """
@@ -205,7 +182,9 @@ def apply_filters(content: dict, filters: FilterParams) -> dict:
     Returns:
         Filtered content dictionary.
     """
-    if not any([filters.portal, filters.company_name, filters.title, filters.date_from, filters.date_to]):
+    if not any(
+        [filters.portal, filters.company_name, filters.title, filters.date_from, filters.date_to]
+    ):
         return content
 
     filtered = {}
@@ -253,7 +232,7 @@ async def fetch_user_doc_paginated(
     user_id: str,
     limit: int = 20,
     cursor: str | None = None,
-    filters: FilterParams | None = None
+    filters: FilterParams | None = None,
 ) -> tuple[dict, bool, str | None, int]:
     """
     Fetch a user's document with pagination and filtering support.
@@ -298,7 +277,7 @@ async def fetch_user_doc_paginated(
                 start_idx = 0
 
     # Get the slice of keys for this page
-    page_keys = all_keys[start_idx:start_idx + limit + 1]
+    page_keys = all_keys[start_idx : start_idx + limit + 1]
     has_more = len(page_keys) > limit
     page_keys = page_keys[:limit]
 
@@ -316,10 +295,7 @@ async def fetch_user_doc_paginated(
     return paginated_doc, has_more, next_cursor, total_count
 
 
-def parse_applications(
-    doc: dict,
-    exclude_fields: list[str] | None = None
-) -> dict[str, JobData]:
+def parse_applications(doc: dict, exclude_fields: list[str] | None = None) -> dict[str, JobData]:
     """
     Parse document content into JobData dictionary.
 
@@ -346,7 +322,7 @@ def parse_applications(
                 "Validation error for app_id {app_id}: {error}",
                 app_id=app_id,
                 error=str(e),
-                event_type="validation_error"
+                event_type="validation_error",
             )
     return apps_dict
 
@@ -355,6 +331,7 @@ def parse_applications(
 # Successful Applications
 # -----------------------------------------------------------------------------
 
+
 @router.get(
     "/applied",
     summary="Get successful applications for the authenticated user",
@@ -362,7 +339,7 @@ def parse_applications(
         "Fetch all successful job applications with pagination and filtering, "
         "excluding resume and cover letter."
     ),
-    response_model=PaginatedJobsResponse
+    response_model=PaginatedJobsResponse,
 )
 async def get_successful_applications(
     current_user=Depends(get_current_user),
@@ -372,7 +349,7 @@ async def get_successful_applications(
     company_name: str | None = Query(default=None, description="Filter by company name"),
     title: str | None = Query(default=None, description="Filter by job title"),
     date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)")
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)"),
 ):
     """
     Get paginated and filtered list of successful applications.
@@ -391,11 +368,7 @@ async def get_successful_applications(
         PaginatedJobsResponse with applications and pagination info.
     """
     filters = FilterParams(
-        portal=portal,
-        company_name=company_name,
-        title=title,
-        date_from=date_from,
-        date_to=date_to
+        portal=portal, company_name=company_name, title=title, date_from=date_from, date_to=date_to
     )
 
     try:
@@ -404,18 +377,15 @@ async def get_successful_applications(
             user_id=current_user,
             limit=limit,
             cursor=cursor,
-            filters=filters
+            filters=filters,
         )
 
         if not doc:
             return PaginatedJobsResponse(
                 data={},
                 pagination=PaginationInfo(
-                    limit=limit,
-                    next_cursor=None,
-                    has_more=False,
-                    total_count=0
-                )
+                    limit=limit, next_cursor=None, has_more=False, total_count=0
+                ),
             )
 
         apps_dict = parse_applications(doc, exclude_fields=["resume_optimized", "cover_letter"])
@@ -423,11 +393,8 @@ async def get_successful_applications(
         return PaginatedJobsResponse(
             data=apps_dict,
             pagination=PaginationInfo(
-                limit=limit,
-                next_cursor=next_cursor,
-                has_more=has_more,
-                total_count=total_count
-            )
+                limit=limit, next_cursor=next_cursor, has_more=has_more, total_count=total_count
+            ),
         )
 
     except Exception as e:
@@ -435,26 +402,18 @@ async def get_successful_applications(
             "Failed to fetch successful apps for user {user}: {error}",
             user=current_user,
             error=str(e),
-            event_type="fetch_error"
+            event_type="fetch_error",
         )
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch successful apps: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch successful apps: {str(e)}")
 
 
 @router.get(
     "/applied/{app_id}",
     summary="Get detailed information about a specific successful application",
-    description=(
-        "Fetch resume and cover letter for a specific application ID."
-    ),
-    response_model=DetailedJobData
+    description=("Fetch resume and cover letter for a specific application ID."),
+    response_model=DetailedJobData,
 )
-async def get_successful_application_details(
-    app_id: str,
-    current_user=Depends(get_current_user)
-):
+async def get_successful_application_details(app_id: str, current_user=Depends(get_current_user)):
     """
     Get detailed info for a specific successful application.
 
@@ -469,17 +428,13 @@ async def get_successful_application_details(
         doc = await success_applications_collection.find_one({"user_id": current_user})
 
         if not doc or "content" not in doc:
-            raise HTTPException(
-                status_code=404,
-                detail="No applications found for this user."
-            )
+            raise HTTPException(status_code=404, detail="No applications found for this user.")
 
         raw_job_data = doc["content"].get(app_id)
 
         if not raw_job_data:
             raise HTTPException(
-                status_code=404,
-                detail="Application ID not found in successful applications."
+                status_code=404, detail="Application ID not found in successful applications."
             )
 
         resume_optimized = (
@@ -488,15 +443,10 @@ async def get_successful_application_details(
             else None
         )
         cover_letter = (
-            json.loads(raw_job_data["cover_letter"])
-            if raw_job_data.get("cover_letter")
-            else None
+            json.loads(raw_job_data["cover_letter"]) if raw_job_data.get("cover_letter") else None
         )
 
-        return DetailedJobData(
-            resume_optimized=resume_optimized,
-            cover_letter=cover_letter
-        )
+        return DetailedJobData(resume_optimized=resume_optimized, cover_letter=cover_letter)
 
     except HTTPException:
         raise
@@ -506,17 +456,17 @@ async def get_successful_application_details(
             app_id=app_id,
             user=current_user,
             error=str(e),
-            event_type="fetch_error"
+            event_type="fetch_error",
         )
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch detailed application info: {str(e)}"
+            status_code=500, detail=f"Failed to fetch detailed application info: {str(e)}"
         )
 
 
 # -----------------------------------------------------------------------------
 # Failed Applications
 # -----------------------------------------------------------------------------
+
 
 @router.get(
     "/fail_applied",
@@ -525,7 +475,7 @@ async def get_successful_application_details(
         "Fetch all failed job applications with pagination and filtering, "
         "excluding resume and cover letter."
     ),
-    response_model=PaginatedJobsResponse
+    response_model=PaginatedJobsResponse,
 )
 async def get_failed_applications(
     current_user=Depends(get_current_user),
@@ -535,7 +485,7 @@ async def get_failed_applications(
     company_name: str | None = Query(default=None, description="Filter by company name"),
     title: str | None = Query(default=None, description="Filter by job title"),
     date_from: datetime | None = Query(default=None, description="Filter from date (ISO 8601)"),
-    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)")
+    date_to: datetime | None = Query(default=None, description="Filter until date (ISO 8601)"),
 ):
     """
     Get paginated and filtered list of failed applications.
@@ -554,11 +504,7 @@ async def get_failed_applications(
         PaginatedJobsResponse with applications and pagination info.
     """
     filters = FilterParams(
-        portal=portal,
-        company_name=company_name,
-        title=title,
-        date_from=date_from,
-        date_to=date_to
+        portal=portal, company_name=company_name, title=title, date_from=date_from, date_to=date_to
     )
 
     try:
@@ -567,18 +513,15 @@ async def get_failed_applications(
             user_id=current_user,
             limit=limit,
             cursor=cursor,
-            filters=filters
+            filters=filters,
         )
 
         if not doc:
             return PaginatedJobsResponse(
                 data={},
                 pagination=PaginationInfo(
-                    limit=limit,
-                    next_cursor=None,
-                    has_more=False,
-                    total_count=0
-                )
+                    limit=limit, next_cursor=None, has_more=False, total_count=0
+                ),
             )
 
         apps_dict = parse_applications(doc, exclude_fields=["resume_optimized", "cover_letter"])
@@ -586,11 +529,8 @@ async def get_failed_applications(
         return PaginatedJobsResponse(
             data=apps_dict,
             pagination=PaginationInfo(
-                limit=limit,
-                next_cursor=next_cursor,
-                has_more=has_more,
-                total_count=total_count
-            )
+                limit=limit, next_cursor=next_cursor, has_more=has_more, total_count=total_count
+            ),
         )
 
     except Exception as e:
@@ -598,26 +538,18 @@ async def get_failed_applications(
             "Failed to fetch failed apps for user {user}: {error}",
             user=current_user,
             error=str(e),
-            event_type="fetch_error"
+            event_type="fetch_error",
         )
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch failed apps: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to fetch failed apps: {str(e)}")
 
 
 @router.get(
     "/fail_applied/{app_id}",
     summary="Get detailed information about a specific failed application",
-    description=(
-        "Fetch resume and cover letter for a specific failed application ID."
-    ),
-    response_model=DetailedJobData
+    description=("Fetch resume and cover letter for a specific failed application ID."),
+    response_model=DetailedJobData,
 )
-async def get_failed_application_details(
-    app_id: str,
-    current_user=Depends(get_current_user)
-):
+async def get_failed_application_details(app_id: str, current_user=Depends(get_current_user)):
     """
     Get detailed info for a specific failed application.
 
@@ -632,17 +564,13 @@ async def get_failed_application_details(
         doc = await failed_applications_collection.find_one({"user_id": current_user})
 
         if not doc or "content" not in doc:
-            raise HTTPException(
-                status_code=404,
-                detail="No applications found for this user."
-            )
+            raise HTTPException(status_code=404, detail="No applications found for this user.")
 
         raw_job_data = doc["content"].get(app_id)
 
         if not raw_job_data:
             raise HTTPException(
-                status_code=404,
-                detail="Application ID not found in failed applications."
+                status_code=404, detail="Application ID not found in failed applications."
             )
 
         resume_optimized = (
@@ -651,15 +579,10 @@ async def get_failed_application_details(
             else None
         )
         cover_letter = (
-            json.loads(raw_job_data["cover_letter"])
-            if raw_job_data.get("cover_letter")
-            else None
+            json.loads(raw_job_data["cover_letter"]) if raw_job_data.get("cover_letter") else None
         )
 
-        return DetailedJobData(
-            resume_optimized=resume_optimized,
-            cover_letter=cover_letter
-        )
+        return DetailedJobData(resume_optimized=resume_optimized, cover_letter=cover_letter)
 
     except HTTPException:
         raise
@@ -669,9 +592,8 @@ async def get_failed_application_details(
             app_id=app_id,
             user=current_user,
             error=str(e),
-            event_type="fetch_error"
+            event_type="fetch_error",
         )
         raise HTTPException(
-            status_code=500,
-            detail=f"Failed to fetch detailed application info: {str(e)}"
+            status_code=500, detail=f"Failed to fetch detailed application info: {str(e)}"
         )

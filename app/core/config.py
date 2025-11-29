@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     """
     Configuration class for environment variables and service settings.
     """
+
     # Service settings
     service_name: str = os.getenv("SERVICE_NAME", "app_manager")
     environment: str = os.getenv("ENVIRONMENT", "development")
@@ -29,13 +30,17 @@ class Settings(BaseSettings):
     mongo_min_pool_size: int = int(os.getenv("MONGO_MIN_POOL_SIZE", "10"))
     mongo_max_idle_time_ms: int = int(os.getenv("MONGO_MAX_IDLE_TIME_MS", "30000"))
     mongo_connect_timeout_ms: int = int(os.getenv("MONGO_CONNECT_TIMEOUT_MS", "5000"))
-    mongo_server_selection_timeout_ms: int = int(os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000"))
+    mongo_server_selection_timeout_ms: int = int(
+        os.getenv("MONGO_SERVER_SELECTION_TIMEOUT_MS", "5000")
+    )
     mongo_socket_timeout_ms: int = int(os.getenv("MONGO_SOCKET_TIMEOUT_MS", "30000"))
 
     # RabbitMQ settings
     rabbitmq_url: str = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
     middleware_queue: str = os.getenv("MIDDLEWARE_QUEUE", "middleware_notification_queue")
-    application_processing_queue: str = os.getenv("APPLICATION_PROCESSING_QUEUE", "application_processing_queue")
+    application_processing_queue: str = os.getenv(
+        "APPLICATION_PROCESSING_QUEUE", "application_processing_queue"
+    )
     application_dlq: str = os.getenv("APPLICATION_DLQ", "application_dlq")
 
     # Async processing settings
@@ -73,13 +78,11 @@ class Settings(BaseSettings):
         }
 
         if self.environment == "development":
-            base_config.update({
-                "json_logs": False,
-                "log_level": "DEBUG" if self.debug else "INFO"
-            })
+            base_config.update({"json_logs": False, "log_level": "DEBUG" if self.debug else "INFO"})
 
         return base_config
 
     model_config = SettingsConfigDict(env_file=".env")
+
 
 settings = Settings()

@@ -18,7 +18,7 @@ async def healthCheckRoute(factory: HealthCheckFactory) -> Callable:
 
     async def endpoint() -> JSONResponse:
         res = await _factory.check()
-        if res['status'] == HealthCheckStatusEnum.UNHEALTHY.value:
+        if res["status"] == HealthCheckStatusEnum.UNHEALTHY.value:
             return JSONResponse(content=res, status_code=500)
         return JSONResponse(content=res, status_code=200)
 

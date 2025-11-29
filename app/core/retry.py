@@ -4,6 +4,7 @@ Retry mechanism with exponential backoff for application processing.
 This module provides retry logic for handling transient failures during
 application processing, with configurable backoff and error classification.
 """
+
 import asyncio
 import functools
 from collections.abc import Callable
@@ -21,6 +22,7 @@ class RetryableError(Exception):
     Examples: Network timeouts, database connection failures,
     RabbitMQ unavailable, rate limit exceeded.
     """
+
     pass
 
 
@@ -31,6 +33,7 @@ class NonRetryableError(Exception):
     Examples: Invalid application data, authentication failures,
     business logic violations, data validation errors.
     """
+
     pass
 
 
@@ -38,13 +41,16 @@ class MaxRetriesExceededError(Exception):
     """
     Exception raised when maximum retry attempts are exhausted.
     """
+
     def __init__(self, message: str, last_error: Exception, attempts: int):
         super().__init__(message)
         self.last_error = last_error
         self.attempts = attempts
 
 
-def calculate_backoff_delay(attempt: int, base_delay: float = None, max_delay: float = None) -> float:
+def calculate_backoff_delay(
+    attempt: int, base_delay: float = None, max_delay: float = None
+) -> float:
     """
     Calculate exponential backoff delay for a given attempt.
 
@@ -70,7 +76,7 @@ async def retry_with_backoff(
     max_retries: int = None,
     retryable_exceptions: tuple[type[Exception], ...] = (RetryableError,),
     on_retry: Callable[[int, Exception], Any] | None = None,
-    **kwargs
+    **kwargs,
 ) -> Any:
     """
     Execute a function with retry and exponential backoff.
@@ -110,12 +116,12 @@ async def retry_with_backoff(
                     func_name=func.__name__,
                     attempts=attempt,
                     error=str(e),
-                    event_type="retry_exhausted"
+                    event_type="retry_exhausted",
                 )
                 raise MaxRetriesExceededError(
                     f"Max retries ({max_attempts}) exceeded: {str(e)}",
                     last_error=e,
-                    attempts=attempt
+                    attempts=attempt,
                 )
 
             delay = calculate_backoff_delay(attempt)
@@ -127,7 +133,7 @@ async def retry_with_backoff(
                 attempt=attempt,
                 max_attempts=max_attempts,
                 error=str(e),
-                event_type="retry_attempt"
+                event_type="retry_attempt",
             )
 
             if on_retry:
@@ -142,21 +148,18 @@ async def retry_with_backoff(
                 func_name=func.__name__,
                 error=str(e),
                 error_type=type(e).__name__,
-                event_type="unexpected_error"
+                event_type="unexpected_error",
             )
             raise NonRetryableError(f"Unexpected error: {str(e)}") from e
 
     # Should not reach here, but just in case
     raise MaxRetriesExceededError(
-        "Max retries exceeded",
-        last_error=last_error,
-        attempts=max_attempts
+        "Max retries exceeded", last_error=last_error, attempts=max_attempts
     )
 
 
 def with_retry(
-    max_retries: int = None,
-    retryable_exceptions: tuple[type[Exception], ...] = (RetryableError,)
+    max_retries: int = None, retryable_exceptions: tuple[type[Exception], ...] = (RetryableError,)
 ):
     """
     Decorator to add retry logic with exponential backoff to async functions.
@@ -173,6 +176,7 @@ def with_retry(
     Returns:
         Decorated function with retry logic.
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def wrapper(*args, **kwargs):
@@ -181,9 +185,11 @@ def with_retry(
                 *args,
                 max_retries=max_retries,
                 retryable_exceptions=retryable_exceptions,
-                **kwargs
+                **kwargs,
             )
+
         return wrapper
+
     return decorator
 
 
@@ -217,12 +223,14 @@ class RetryContext:
 
     def record_error(self, error: Exception):
         """Record an error that occurred during processing."""
-        self.errors.append({
-            "attempt": self.attempt,
-            "error_type": type(error).__name__,
-            "error_message": str(error),
-            "timestamp": datetime.utcnow().isoformat()
-        })
+        self.errors.append(
+            {
+                "attempt": self.attempt,
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                "timestamp": datetime.utcnow().isoformat(),
+            }
+        )
 
     @property
     def can_retry(self) -> bool:
@@ -242,5 +250,5 @@ class RetryContext:
             "max_retries": self.max_retries,
             "errors": self.errors,
             "started_at": self.started_at.isoformat() if self.started_at else None,
-            "completed_at": self.completed_at.isoformat() if self.completed_at else None
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
         }

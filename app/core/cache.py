@@ -6,6 +6,7 @@ Provides:
 - Async-compatible caching decorators
 - Cache statistics for monitoring
 """
+
 import hashlib
 import json
 import time
@@ -25,6 +26,7 @@ T = TypeVar("T")
 @dataclass
 class CacheEntry:
     """Represents a cached value with metadata."""
+
     value: Any
     created_at: float
     ttl: float
@@ -39,6 +41,7 @@ class CacheEntry:
 @dataclass
 class CacheStats:
     """Cache statistics for monitoring."""
+
     hits: int = 0
     misses: int = 0
     evictions: int = 0
@@ -59,7 +62,7 @@ class CacheStats:
             "evictions": self.evictions,
             "size": self.size,
             "max_size": self.max_size,
-            "hit_rate": round(self.hit_rate, 4)
+            "hit_rate": round(self.hit_rate, 4),
         }
 
 
@@ -73,12 +76,7 @@ class LRUCache:
     - Statistics tracking for monitoring
     """
 
-    def __init__(
-        self,
-        max_size: int = 1000,
-        default_ttl: float = 300.0,
-        name: str = "default"
-    ):
+    def __init__(self, max_size: int = 1000, default_ttl: float = 300.0, name: str = "default"):
         """
         Initialize the LRU cache.
 
@@ -96,11 +94,7 @@ class LRUCache:
 
     def _make_key(self, *args, **kwargs) -> str:
         """Generate a cache key from arguments."""
-        key_data = json.dumps(
-            {"args": args, "kwargs": kwargs},
-            sort_keys=True,
-            default=str
-        )
+        key_data = json.dumps({"args": args, "kwargs": kwargs}, sort_keys=True, default=str)
         return hashlib.sha256(key_data.encode()).hexdigest()[:32]
 
     def get(self, key: str) -> Any | None:
@@ -154,9 +148,7 @@ class LRUCache:
                 self._stats.evictions += 1
 
             self._cache[key] = CacheEntry(
-                value=value,
-                created_at=time.time(),
-                ttl=ttl or self._default_ttl
+                value=value, created_at=time.time(), ttl=ttl or self._default_ttl
             )
             self._cache.move_to_end(key)
             self._stats.size = len(self._cache)
@@ -193,8 +185,7 @@ class LRUCache:
         """
         now = time.time()
         expired_keys = [
-            key for key, entry in self._cache.items()
-            if now - entry.created_at > entry.ttl
+            key for key, entry in self._cache.items() if now - entry.created_at > entry.ttl
         ]
 
         for key in expired_keys:
@@ -222,10 +213,7 @@ class LRUCache:
             Number of keys invalidated.
         """
         with self._lock:
-            keys_to_delete = [
-                key for key in self._cache
-                if key.startswith(pattern)
-            ]
+            keys_to_delete = [key for key in self._cache if key.startswith(pattern)]
 
             for key in keys_to_delete:
                 del self._cache[key]
@@ -236,22 +224,14 @@ class LRUCache:
 
 # Global cache instances for different purposes
 application_cache = LRUCache(
-    max_size=1000,
-    default_ttl=60.0,  # 1 minute for application status
-    name="application"
+    max_size=1000, default_ttl=60.0, name="application"  # 1 minute for application status
 )
 
-user_cache = LRUCache(
-    max_size=500,
-    default_ttl=300.0,  # 5 minutes for user data
-    name="user"
-)
+user_cache = LRUCache(max_size=500, default_ttl=300.0, name="user")  # 5 minutes for user data
 
 
 def cached(
-    cache: LRUCache,
-    ttl: float | None = None,
-    key_prefix: str = ""
+    cache: LRUCache, ttl: float | None = None, key_prefix: str = ""
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Decorator for caching synchronous function results.
@@ -264,6 +244,7 @@ def cached(
     Returns:
         Decorated function.
     """
+
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -285,13 +266,12 @@ def cached(
         wrapper.cache_stats = lambda: cache.stats
 
         return wrapper
+
     return decorator
 
 
 def async_cached(
-    cache: LRUCache,
-    ttl: float | None = None,
-    key_prefix: str = ""
+    cache: LRUCache, ttl: float | None = None, key_prefix: str = ""
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """
     Decorator for caching async function results.
@@ -304,6 +284,7 @@ def async_cached(
     Returns:
         Decorated async function.
     """
+
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         @wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
@@ -325,6 +306,7 @@ def async_cached(
         wrapper.cache_stats = lambda: cache.stats
 
         return wrapper
+
     return decorator
 
 
@@ -363,5 +345,5 @@ def get_all_cache_stats() -> dict:
     """
     return {
         "application_cache": application_cache.stats.to_dict(),
-        "user_cache": user_cache.stats.to_dict()
+        "user_cache": user_cache.stats.to_dict(),
     }

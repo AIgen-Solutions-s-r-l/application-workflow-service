@@ -6,6 +6,7 @@ Provides:
 - /health/live: Liveness probe (is the service running?)
 - /health/ready: Readiness probe (can the service handle traffic?)
 """
+
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
@@ -21,6 +22,7 @@ router = APIRouter(tags=["healthcheck"])
 
 class DependencyStatus(BaseModel):
     """Status of a single dependency."""
+
     name: str
     status: str  # "healthy", "unhealthy", "degraded"
     latency_ms: float | None = None
@@ -29,6 +31,7 @@ class DependencyStatus(BaseModel):
 
 class HealthResponse(BaseModel):
     """Full health check response."""
+
     status: str  # "healthy", "unhealthy", "degraded"
     version: str = "1.0.0"
     service: str = "application-manager-service"
@@ -39,12 +42,14 @@ class HealthResponse(BaseModel):
 
 class LivenessResponse(BaseModel):
     """Liveness probe response."""
+
     status: str = "alive"
     timestamp: str
 
 
 class ReadinessResponse(BaseModel):
     """Readiness probe response."""
+
     status: str  # "ready", "not_ready"
     timestamp: str
     checks: dict[str, str] = {}
@@ -55,16 +60,12 @@ def _get_health_check_factory() -> HealthCheckFactory:
     factory = HealthCheckFactory()
     factory.add(
         HealthCheckMongoDB(
-            connection_uri=settings.mongodb,
-            alias='mongodb',
-            tags=('database', 'mongodb')
+            connection_uri=settings.mongodb, alias="mongodb", tags=("database", "mongodb")
         )
     )
     factory.add(
         HealthCheckRabbitMQ(
-            connection_uri=settings.rabbitmq_url,
-            alias='rabbitmq',
-            tags=('messaging', 'rabbitmq')
+            connection_uri=settings.rabbitmq_url, alias="rabbitmq", tags=("messaging", "rabbitmq")
         )
     )
     return factory
@@ -77,8 +78,8 @@ def _get_health_check_factory() -> HealthCheckFactory:
     response_model=HealthResponse,
     responses={
         200: {"description": "Service is healthy"},
-        503: {"description": "Service is unhealthy or degraded"}
-    }
+        503: {"description": "Service is unhealthy or degraded"},
+    },
 )
 async def health_check():
     """
@@ -104,11 +105,11 @@ async def health_check():
             if dep_status == "unhealthy":
                 overall_status = "unhealthy"
 
-            dependencies.append(DependencyStatus(
-                name=entity.get("alias", "unknown"),
-                status=dep_status,
-                message=None
-            ))
+            dependencies.append(
+                DependencyStatus(
+                    name=entity.get("alias", "unknown"), status=dep_status, message=None
+                )
+            )
 
         status_code = 200 if overall_status == "healthy" else 503
 
@@ -116,7 +117,7 @@ async def health_check():
             status=overall_status,
             environment=settings.environment,
             timestamp=datetime.utcnow().isoformat() + "Z",
-            dependencies=dependencies
+            dependencies=dependencies,
         )
 
         if status_code == 503:
@@ -132,8 +133,8 @@ async def health_check():
             detail={
                 "status": "unhealthy",
                 "error": str(e),
-                "timestamp": datetime.utcnow().isoformat() + "Z"
-            }
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            },
         )
 
 
@@ -142,9 +143,7 @@ async def health_check():
     summary="Liveness probe",
     description="Kubernetes liveness probe - checks if the service is running.",
     response_model=LivenessResponse,
-    responses={
-        200: {"description": "Service is alive"}
-    }
+    responses={200: {"description": "Service is alive"}},
 )
 async def liveness_probe():
     """
@@ -153,10 +152,7 @@ async def liveness_probe():
     Returns 200 if the service is running.
     This endpoint should always succeed if the process is alive.
     """
-    return LivenessResponse(
-        status="alive",
-        timestamp=datetime.utcnow().isoformat() + "Z"
-    )
+    return LivenessResponse(status="alive", timestamp=datetime.utcnow().isoformat() + "Z")
 
 
 @router.get(
@@ -166,8 +162,8 @@ async def liveness_probe():
     response_model=ReadinessResponse,
     responses={
         200: {"description": "Service is ready to handle traffic"},
-        503: {"description": "Service is not ready"}
-    }
+        503: {"description": "Service is not ready"},
+    },
 )
 async def readiness_probe():
     """
@@ -193,7 +189,7 @@ async def readiness_probe():
         response = ReadinessResponse(
             status="ready" if all_ready else "not_ready",
             timestamp=datetime.utcnow().isoformat() + "Z",
-            checks=checks
+            checks=checks,
         )
 
         if not all_ready:
@@ -210,8 +206,8 @@ async def readiness_probe():
                 "status": "not_ready",
                 "error": str(e),
                 "timestamp": datetime.utcnow().isoformat() + "Z",
-                "checks": checks
-            }
+                "checks": checks,
+            },
         )
 
 
@@ -220,7 +216,7 @@ async def readiness_probe():
     "/healthcheck",
     summary="Legacy health check",
     description="Legacy health check endpoint (use /health instead).",
-    deprecated=True
+    deprecated=True,
 )
 async def legacy_health_check():
     """Legacy health check endpoint - redirects to /health."""

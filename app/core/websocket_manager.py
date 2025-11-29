@@ -6,6 +6,7 @@ Provides:
 - Broadcasting status updates to connected clients
 - Automatic cleanup of disconnected clients
 """
+
 import asyncio
 from collections import defaultdict
 from datetime import datetime
@@ -51,11 +52,14 @@ class ConnectionManager:
         )
 
         # Send welcome message
-        await self._send_message(websocket, {
-            "type": "connected",
-            "message": "Connected to status updates",
-            "timestamp": datetime.utcnow().isoformat() + "Z"
-        })
+        await self._send_message(
+            websocket,
+            {
+                "type": "connected",
+                "message": "Connected to status updates",
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+            },
+        )
 
     async def disconnect(self, websocket: WebSocket) -> None:
         """
@@ -75,11 +79,7 @@ class ConnectionManager:
 
                 logger.info(f"WebSocket disconnected for user {user_id}")
 
-    async def broadcast_to_user(
-        self,
-        user_id: str,
-        message: dict
-    ) -> int:
+    async def broadcast_to_user(self, user_id: str, message: dict) -> int:
         """
         Send a message to all connections for a specific user.
 
@@ -122,7 +122,7 @@ class ConnectionManager:
         application_id: str,
         status: str,
         job_count: int | None = None,
-        error_reason: str | None = None
+        error_reason: str | None = None,
     ) -> int:
         """
         Send an application status update to a user.
@@ -141,7 +141,7 @@ class ConnectionManager:
             "type": "status_update",
             "application_id": application_id,
             "status": status,
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
 
         if job_count is not None:
@@ -153,13 +153,7 @@ class ConnectionManager:
         return await self.broadcast_to_user(user_id, message)
 
     async def send_batch_update(
-        self,
-        user_id: str,
-        batch_id: str,
-        status: str,
-        total: int,
-        processed: int,
-        failed: int
+        self, user_id: str, batch_id: str, status: str, total: int, processed: int, failed: int
     ) -> int:
         """
         Send a batch processing update to a user.
@@ -182,7 +176,7 @@ class ConnectionManager:
             "total": total,
             "processed": processed,
             "failed": failed,
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
 
         return await self.broadcast_to_user(user_id, message)
@@ -229,8 +223,7 @@ async def handle_websocket(websocket: WebSocket, user_id: str) -> None:
             # Keep connection alive and handle incoming messages
             try:
                 data = await asyncio.wait_for(
-                    websocket.receive_text(),
-                    timeout=30.0  # Ping every 30 seconds
+                    websocket.receive_text(), timeout=30.0  # Ping every 30 seconds
                 )
 
                 # Handle ping/pong for keepalive
@@ -240,10 +233,9 @@ async def handle_websocket(websocket: WebSocket, user_id: str) -> None:
             except TimeoutError:
                 # Send keepalive ping
                 try:
-                    await websocket.send_json({
-                        "type": "ping",
-                        "timestamp": datetime.utcnow().isoformat() + "Z"
-                    })
+                    await websocket.send_json(
+                        {"type": "ping", "timestamp": datetime.utcnow().isoformat() + "Z"}
+                    )
                 except Exception:
                     break
 

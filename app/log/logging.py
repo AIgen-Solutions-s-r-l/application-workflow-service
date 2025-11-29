@@ -14,14 +14,16 @@ from loguru import logger as loguru_logger
 
 class LogConfig:
     def __init__(self):
-        self.enviroment = os.getenv('ENVIRONMENT', 'development')
-        self.service = os.getenv('SERVICE_NAME', 'default_service_name')
-        self.hostname = os.getenv('HOSTNAME', 'unknown')
-        self.loglevel = os.getenv('LOGLEVEL', 'INFO')
-        self.loglevel_dd = os.getenv('LOGLEVEL_DATADOG', 'ERROR')
+        self.enviroment = os.getenv("ENVIRONMENT", "development")
+        self.service = os.getenv("SERVICE_NAME", "default_service_name")
+        self.hostname = os.getenv("HOSTNAME", "unknown")
+        self.loglevel = os.getenv("LOGLEVEL", "INFO")
+        self.loglevel_dd = os.getenv("LOGLEVEL_DATADOG", "ERROR")
+
 
 # Istanza globale della configurazione
 logconfig = LogConfig()
+
 
 class InterceptHandler(logging.Handler):
     def emit(self, record: logging.LogRecord) -> None:
@@ -43,6 +45,7 @@ class InterceptHandler(logging.Handler):
             depth += 1
 
         loguru_logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
 
 class DatadogHandler(StreamHandler):
     def __init__(self):
@@ -73,9 +76,7 @@ class DatadogHandler(StreamHandler):
             **record.extra,
         }
 
-        http_log_item = HTTPLogItem(
-            **log
-        )
+        http_log_item = HTTPLogItem(**log)
 
         http_log = HTTPLog([http_log_item])
 
@@ -88,10 +89,13 @@ def init_logging():
         loguru_logger.remove()  # Rimuove il logger predefinito di loguru
 
         # Aggiungi un handler per la console
-        loguru_logger.add(sys.stdout, format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS Z}</green> | "
-    "<level>{level: <8}</level> | "
-    "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level> | <level>{extra}</level>",
-      level=logconfig.loglevel)
+        loguru_logger.add(
+            sys.stdout,
+            format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS Z}</green> | "
+            "<level>{level: <8}</level> | "
+            "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | <level>{message}</level> | <level>{extra}</level>",
+            level=logconfig.loglevel,
+        )
 
         dd_api_key = os.getenv("DD_API_KEY")
 
@@ -99,8 +103,9 @@ def init_logging():
             # Aggiungi un handler per datadog
             loguru_logger.add(DatadogHandler(), level=logconfig.loglevel_dd)
         else:
-            loguru_logger.warning("Datadog API key is not set or environment variable is invalid. Logging to console only.")
-
+            loguru_logger.warning(
+                "Datadog API key is not set or environment variable is invalid. Logging to console only."
+            )
 
         return loguru_logger
     except Exception as e:
@@ -109,5 +114,6 @@ def init_logging():
         loguru_logger.remove()
         loguru_logger.add(sys.stdout, format="{time} | {level} | {message}", level="DEBUG")
         return loguru_logger
+
 
 logger = init_logging()

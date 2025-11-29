@@ -6,6 +6,7 @@ This module provides:
 - Index creation for query performance
 - Database health monitoring utilities
 """
+
 from typing import Optional
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
@@ -75,18 +76,14 @@ class DatabaseManager:
                 IndexModel([("user_id", ASCENDING)], name="idx_user_id"),
                 IndexModel([("status", ASCENDING)], name="idx_status"),
                 IndexModel([("created_at", DESCENDING)], name="idx_created_at"),
+                IndexModel([("user_id", ASCENDING), ("status", ASCENDING)], name="idx_user_status"),
                 IndexModel(
-                    [("user_id", ASCENDING), ("status", ASCENDING)],
-                    name="idx_user_status"
-                ),
-                IndexModel(
-                    [("user_id", ASCENDING), ("created_at", DESCENDING)],
-                    name="idx_user_created"
+                    [("user_id", ASCENDING), ("created_at", DESCENDING)], name="idx_user_created"
                 ),
                 IndexModel(
                     [("status", ASCENDING), ("updated_at", ASCENDING)],
                     name="idx_status_updated",
-                    partialFilterExpression={"status": {"$in": ["pending", "processing"]}}
+                    partialFilterExpression={"status": {"$in": ["pending", "processing"]}},
                 ),
             ]
 
@@ -97,8 +94,7 @@ class DatabaseManager:
             success_indexes = [
                 IndexModel([("user_id", ASCENDING)], name="idx_user_id"),
                 IndexModel(
-                    [("user_id", ASCENDING), ("content.portal", ASCENDING)],
-                    name="idx_user_portal"
+                    [("user_id", ASCENDING), ("content.portal", ASCENDING)], name="idx_user_portal"
                 ),
             ]
 
@@ -109,8 +105,7 @@ class DatabaseManager:
             failed_indexes = [
                 IndexModel([("user_id", ASCENDING)], name="idx_user_id"),
                 IndexModel(
-                    [("user_id", ASCENDING), ("content.portal", ASCENDING)],
-                    name="idx_user_portal"
+                    [("user_id", ASCENDING), ("content.portal", ASCENDING)], name="idx_user_portal"
                 ),
             ]
 
@@ -132,7 +127,7 @@ class DatabaseManager:
                 IndexModel(
                     [("created_at", ASCENDING)],
                     name="idx_ttl",
-                    expireAfterSeconds=86400  # 24 hours TTL
+                    expireAfterSeconds=86400,  # 24 hours TTL
                 ),
             ]
 

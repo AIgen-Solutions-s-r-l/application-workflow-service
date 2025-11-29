@@ -4,6 +4,7 @@ Queue service for publishing applications to the processing queue.
 This module handles publishing application data to RabbitMQ for
 asynchronous processing by the ApplicationWorker.
 """
+
 from datetime import datetime
 
 from app.core.config import settings
@@ -34,7 +35,7 @@ class ApplicationQueueService:
         user_id: str,
         job_count: int,
         cv_id: str | None = None,
-        style: str | None = None
+        style: str | None = None,
     ) -> bool:
         """
         Publish an application to the processing queue.
@@ -53,7 +54,7 @@ class ApplicationQueueService:
             logger.debug(
                 "Async processing disabled, skipping queue publish for {application_id}",
                 application_id=application_id,
-                event_type="async_processing_disabled"
+                event_type="async_processing_disabled",
             )
             return False
 
@@ -65,16 +66,14 @@ class ApplicationQueueService:
                 "user_id": user_id,
                 "job_count": job_count,
                 "cv_id": cv_id,
-                "style": style
+                "style": style,
             }
 
             # Add correlation ID for request tracing
             message = add_correlation_to_message(message)
 
             await client.publish_message(
-                queue_name=settings.application_processing_queue,
-                message=message,
-                persistent=True
+                queue_name=settings.application_processing_queue, message=message, persistent=True
             )
 
             # Record metrics
@@ -87,7 +86,7 @@ class ApplicationQueueService:
                 user_id=user_id,
                 job_count=job_count,
                 correlation_id=correlation_id,
-                event_type="application_queued"
+                event_type="application_queued",
             )
 
             return True
@@ -97,15 +96,12 @@ class ApplicationQueueService:
                 "Failed to publish application {application_id} to queue: {error}",
                 application_id=application_id,
                 error=str(e),
-                event_type="queue_publish_failed"
+                event_type="queue_publish_failed",
             )
             return False
 
     async def publish_to_dlq(
-        self,
-        application_id: str,
-        error_message: str,
-        original_message: dict
+        self, application_id: str, error_message: str, original_message: dict
     ) -> bool:
         """
         Publish a failed message to the dead letter queue.
@@ -125,16 +121,14 @@ class ApplicationQueueService:
                 "application_id": application_id,
                 "error_message": error_message,
                 "original_message": original_message,
-                "failed_at": datetime.utcnow().isoformat() + "Z"
+                "failed_at": datetime.utcnow().isoformat() + "Z",
             }
 
             # Add correlation ID for request tracing
             dlq_message = add_correlation_to_message(dlq_message)
 
             await client.publish_message(
-                queue_name=settings.application_dlq,
-                message=dlq_message,
-                persistent=True
+                queue_name=settings.application_dlq, message=dlq_message, persistent=True
             )
 
             # Record metrics
@@ -146,7 +140,7 @@ class ApplicationQueueService:
                 application_id=application_id,
                 error=error_message,
                 correlation_id=correlation_id,
-                event_type="application_dlq"
+                event_type="application_dlq",
             )
 
             return True
@@ -156,7 +150,7 @@ class ApplicationQueueService:
                 "Failed to publish to DLQ for {application_id}: {error}",
                 application_id=application_id,
                 error=str(e),
-                event_type="dlq_publish_failed"
+                event_type="dlq_publish_failed",
             )
             return False
 

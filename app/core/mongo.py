@@ -30,8 +30,8 @@ def get_database():
 database = get_database()
 
 # Collection references
-applications_collection = database['jobs_to_apply_per_user']
-resumes_collection = database['resumes']
-pdf_resumes_collection = database['pdf_resumes']
-success_applications_collection = database['success_app']
-failed_applications_collection = database['failed_app']
+applications_collection = database["jobs_to_apply_per_user"]
+resumes_collection = database["resumes"]
+pdf_resumes_collection = database["pdf_resumes"]
+success_applications_collection = database["success_app"]
+failed_applications_collection = database["failed_app"]

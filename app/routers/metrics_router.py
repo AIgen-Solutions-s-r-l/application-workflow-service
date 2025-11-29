@@ -1,6 +1,7 @@
 """
 Metrics router for Prometheus endpoint.
 """
+
 from fastapi import APIRouter, Response
 
 from app.core.metrics import get_metrics, get_metrics_content_type
@@ -12,7 +13,7 @@ router = APIRouter(tags=["metrics"])
     "/metrics",
     summary="Prometheus metrics",
     description="Returns Prometheus-formatted metrics for monitoring.",
-    response_class=Response
+    response_class=Response,
 )
 async def metrics():
     """
@@ -20,7 +21,4 @@ async def metrics():
 
     Returns metrics in Prometheus text format for scraping.
     """
-    return Response(
-        content=get_metrics(),
-        media_type=get_metrics_content_type()
-    )
+    return Response(content=get_metrics(), media_type=get_metrics_content_type())

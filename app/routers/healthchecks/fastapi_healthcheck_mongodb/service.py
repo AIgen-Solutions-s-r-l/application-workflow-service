@@ -8,6 +8,7 @@ from app.routers.healthchecks.fastapi_healthcheck.service import HealthCheckBase
 
 logger = logging.getLogger(__name__)
 
+
 class HealthCheckMongoDB(HealthCheckBase, HealthCheckInterface):
     _connection_uri: str
     _message: str

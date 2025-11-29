@@ -4,6 +4,7 @@ Notification service for publishing application events to RabbitMQ.
 This module provides enriched notification payloads for downstream consumers,
 replacing the basic {"updated": true} format with structured event data.
 """
+
 from datetime import datetime
 
 from app.core.config import settings
@@ -26,10 +27,7 @@ class NotificationPublisher(BasePublisher):
         return settings.middleware_queue
 
     async def publish_application_submitted(
-        self,
-        application_id: str,
-        user_id: str,
-        job_count: int
+        self, application_id: str, user_id: str, job_count: int
     ) -> None:
         """
         Publish notification when a new application is submitted.
@@ -44,14 +42,14 @@ class NotificationPublisher(BasePublisher):
             application_id=application_id,
             user_id=user_id,
             status="pending",
-            job_count=job_count
+            job_count=job_count,
         )
 
         logger.info(
             "Publishing application.submitted event",
             event_type="notification_publishing",
             application_id=application_id,
-            user_id=user_id
+            user_id=user_id,
         )
 
         await self.publish(payload, persistent=True)
@@ -63,7 +61,7 @@ class NotificationPublisher(BasePublisher):
         status: str,
         job_count: int,
         previous_status: str | None = None,
-        error_reason: str | None = None
+        error_reason: str | None = None,
     ) -> None:
         """
         Publish notification when application status changes.
@@ -83,7 +81,7 @@ class NotificationPublisher(BasePublisher):
             status=status,
             job_count=job_count,
             previous_status=previous_status,
-            error_reason=error_reason
+            error_reason=error_reason,
         )
 
         logger.info(
@@ -91,7 +89,7 @@ class NotificationPublisher(BasePublisher):
             event_type="notification_publishing",
             application_id=application_id,
             user_id=user_id,
-            status=status
+            status=status,
         )
 
         await self.publish(payload, persistent=True)
@@ -105,7 +103,7 @@ class NotificationPublisher(BasePublisher):
         """
         logger.warning(
             "Using deprecated publish_application_updated method",
-            event_type="notification_publishing"
+            event_type="notification_publishing",
         )
 
         # Send both legacy and new format for backward compatibility
@@ -120,7 +118,7 @@ class NotificationPublisher(BasePublisher):
         status: str,
         job_count: int,
         previous_status: str | None = None,
-        error_reason: str | None = None
+        error_reason: str | None = None,
     ) -> dict:
         """
         Build a standardized event payload.
@@ -144,7 +142,7 @@ class NotificationPublisher(BasePublisher):
             "user_id": user_id,
             "status": status,
             "job_count": job_count,
-            "timestamp": datetime.utcnow().isoformat() + "Z"
+            "timestamp": datetime.utcnow().isoformat() + "Z",
         }
 
         if previous_status:

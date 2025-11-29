@@ -7,6 +7,7 @@ Provides:
 - Trace context propagation
 - Export to various backends (Jaeger, OTLP, etc.)
 """
+
 import os
 from contextlib import contextmanager
 from typing import Optional
@@ -36,12 +37,14 @@ OTLP_AVAILABLE = False
 if OTEL_AVAILABLE:
     try:
         from opentelemetry.exporter.jaeger.thrift import JaegerExporter
+
         JAEGER_AVAILABLE = True
     except ImportError:
         pass
 
     try:
         from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
         OTLP_AVAILABLE = True
     except ImportError:
         pass
@@ -89,11 +92,13 @@ def init_tracing() -> Optional["trace.Tracer"]:
         return None
 
     # Create resource with service information
-    resource = Resource.create({
-        SERVICE_NAME: tracing_config.service_name,
-        SERVICE_VERSION: tracing_config.service_version,
-        "deployment.environment": settings.environment
-    })
+    resource = Resource.create(
+        {
+            SERVICE_NAME: tracing_config.service_name,
+            SERVICE_VERSION: tracing_config.service_version,
+            "deployment.environment": settings.environment,
+        }
+    )
 
     # Create tracer provider
     provider = TracerProvider(resource=resource)
@@ -103,15 +108,14 @@ def init_tracing() -> Optional["trace.Tracer"]:
 
     if tracing_config.exporter_type == "jaeger" and JAEGER_AVAILABLE:
         exporter = JaegerExporter(
-            agent_host_name=tracing_config.jaeger_host,
-            agent_port=tracing_config.jaeger_port
+            agent_host_name=tracing_config.jaeger_host, agent_port=tracing_config.jaeger_port
         )
-        logger.info(f"Jaeger exporter configured: {tracing_config.jaeger_host}:{tracing_config.jaeger_port}")
+        logger.info(
+            f"Jaeger exporter configured: {tracing_config.jaeger_host}:{tracing_config.jaeger_port}"
+        )
 
     elif tracing_config.exporter_type == "otlp" and OTLP_AVAILABLE:
-        exporter = OTLPSpanExporter(
-            endpoint=tracing_config.otlp_endpoint
-        )
+        exporter = OTLPSpanExporter(endpoint=tracing_config.otlp_endpoint)
         logger.info(f"OTLP exporter configured: {tracing_config.otlp_endpoint}")
 
     else:
@@ -129,10 +133,7 @@ def init_tracing() -> Optional["trace.Tracer"]:
     set_global_textmap(TraceContextTextMapPropagator())
 
     # Get tracer
-    _tracer = trace.get_tracer(
-        tracing_config.service_name,
-        tracing_config.service_version
-    )
+    _tracer = trace.get_tracer(tracing_config.service_name, tracing_config.service_version)
 
     logger.info("OpenTelemetry tracing initialized")
     return _tracer
@@ -144,11 +145,7 @@ def get_tracer() -> Optional["trace.Tracer"]:
 
 
 @contextmanager
-def create_span(
-    name: str,
-    attributes: dict | None = None,
-    kind: Optional["trace.SpanKind"] = None
-):
+def create_span(name: str, attributes: dict | None = None, kind: Optional["trace.SpanKind"] = None):
     """
     Create a new span for tracing.
 
@@ -238,6 +235,7 @@ def instrument_fastapi(app) -> None:
 
     try:
         from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
         FastAPIInstrumentor.instrument_app(app)
         logger.info("FastAPI instrumented for tracing")
     except ImportError:
@@ -251,6 +249,7 @@ def instrument_mongodb() -> None:
 
     try:
         from opentelemetry.instrumentation.pymongo import PymongoInstrumentor
+
         PymongoInstrumentor().instrument()
         logger.info("MongoDB instrumented for tracing")
     except ImportError:
@@ -264,6 +263,7 @@ def instrument_aiopika() -> None:
 
     try:
         from opentelemetry.instrumentation.aio_pika import AioPikaInstrumentor
+
         AioPikaInstrumentor().instrument()
         logger.info("aio-pika instrumented for tracing")
     except ImportError:
@@ -271,10 +271,7 @@ def instrument_aiopika() -> None:
 
 
 # Decorator for tracing functions
-def traced(
-    name: str | None = None,
-    attributes: dict | None = None
-):
+def traced(name: str | None = None, attributes: dict | None = None):
     """
     Decorator to trace a function.
 
@@ -285,6 +282,7 @@ def traced(
     Returns:
         Decorated function.
     """
+
     def decorator(func):
         import asyncio
         import functools

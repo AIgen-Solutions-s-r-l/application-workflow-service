@@ -23,10 +23,7 @@ class PdfResumeService:
             DatabaseOperationError: If there is an issue inserting the PDF resume.
         """
         try:
-            result = await pdf_resumes_collection.insert_one({
-                "cv": pdf_bytes,
-                "app_ids": []
-            })
+            result = await pdf_resumes_collection.insert_one({"cv": pdf_bytes, "app_ids": []})
             return str(result.inserted_id) if result.inserted_id else None
         except Exception as e:
             raise DatabaseOperationError(f"Error storing pdf resume data: {str(e)}")

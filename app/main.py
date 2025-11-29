@@ -48,7 +48,7 @@ app = FastAPI(
     title="Application Manager Service",
     description="Manages job application workflows with async processing",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 # Add middlewares in order (last added = first executed)
@@ -65,10 +65,12 @@ app.add_middleware(MetricsMiddleware)
 if settings.rate_limit_enabled:
     app.add_middleware(RateLimitMiddleware)
 
+
 # Root endpoint for testing
 @app.get("/")
 async def root():
     return {"message": "Application Manager Service is running!"}
+
 
 # Include routers
 app.include_router(application_router)
