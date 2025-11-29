@@ -4,10 +4,12 @@ Application uploader service for managing job application submissions.
 from datetime import datetime
 from typing import Optional
 
+from app.core.config import settings
 from app.core.mongo import applications_collection
 from app.core.exceptions import DatabaseOperationError
 from app.models.application import ApplicationStatus
 from app.services.notification_service import NotificationPublisher
+from app.services.queue_service import application_queue_service
 
 
 notification_publisher = NotificationPublisher()
@@ -72,6 +74,16 @@ class ApplicationUploaderService:
                     user_id=str(user_id),
                     job_count=len(job_list_to_apply)
                 )
+
+                # Publish to processing queue if async processing is enabled
+                if settings.async_processing_enabled:
+                    await application_queue_service.publish_application_for_processing(
+                        application_id=application_id,
+                        user_id=str(user_id),
+                        job_count=len(job_list_to_apply),
+                        cv_id=cv_id,
+                        style=style
+                    )
 
             return application_id
 

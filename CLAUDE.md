@@ -72,11 +72,12 @@ docker run -p 8009:8000 application-manager-service
 ### Directory Structure
 ```
 app/
-├── core/           # Core functionality (config, auth, DB clients)
+├── core/           # Core functionality (config, auth, DB clients, rate limiting, retry)
 ├── models/         # Pydantic models (JobData, Application, etc.)
 ├── routers/        # FastAPI route handlers
 ├── schemas/        # Request/response schemas
 ├── services/       # Business logic layer
+├── workers/        # Async workers for background processing
 └── scripts/        # Database initialization scripts
 ```
 
@@ -95,6 +96,17 @@ app/
 - Publishes enriched application status notifications to RabbitMQ
 - Event types: `application.submitted`, `application.status_changed`
 - Uses the `middleware_notification_queue` queue
+
+**QueueService** (`app/services/queue_service.py`)
+- Publishes applications to the processing queue for async processing
+- Handles dead letter queue (DLQ) publishing for failed messages
+- Configurable via `ASYNC_PROCESSING_ENABLED` setting
+
+**ApplicationWorker** (`app/workers/application_worker.py`)
+- Consumes from `application_processing_queue`
+- Processes applications with retry and exponential backoff
+- Moves failed applications to DLQ after max retries
+- Run as standalone: `python -m app.workers.application_worker`
 
 ### MongoDB Collections
 
@@ -149,6 +161,21 @@ SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
 DEBUG=True
 ENVIRONMENT=development
+
+# Async Processing
+ASYNC_PROCESSING_ENABLED=True
+APPLICATION_PROCESSING_QUEUE=application_processing_queue
+APPLICATION_DLQ=application_dlq
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=True
+RATE_LIMIT_APPLICATIONS=100/hour
+RATE_LIMIT_REQUESTS=1000/hour
+
+# Retry Configuration
+MAX_RETRIES=5
+RETRY_BASE_DELAY=1.0
+RETRY_MAX_DELAY=16.0
 ```
 
 ## API Endpoints
@@ -253,7 +280,8 @@ tests/
 ├── core/                    # Core component tests
 ├── routers/                 # API endpoint tests
 ├── integration/             # End-to-end workflow tests
-└── test_sprint1_features.py # Sprint 1 feature tests
+├── test_sprint1_features.py # Sprint 1 feature tests
+└── test_sprint2_features.py # Sprint 2 feature tests (async, rate limit, retry)
 ```
 
 ### Async Testing
@@ -264,14 +292,45 @@ All async functions use `pytest-asyncio` with `asyncio_mode = auto` configured i
 - RabbitMQ connections use mocked `AsyncRabbitMQClient`
 - JWT authentication can be bypassed in tests by overriding dependencies
 
-## Future Architecture Notes
+## Async Processing Architecture
 
-The memory-bank documents describe a planned migration to worker-based asynchronous processing:
-- API tier will return immediately with tracking IDs (partially implemented)
-- Workers will consume from RabbitMQ and process applications asynchronously
-- Status endpoints allow clients to poll application progress (implemented)
+The service now supports asynchronous application processing:
 
-When implementing new features, consider compatibility with this future architecture. Keep business logic in services rather than routers to facilitate eventual extraction to workers.
+1. **Submission**: POST /applications returns immediately with tracking ID
+2. **Queue**: Application is published to `application_processing_queue`
+3. **Worker**: ApplicationWorker consumes and processes applications
+4. **Status**: Clients poll GET /applications/{id}/status for progress
+
+### Running the Worker
+
+```bash
+# As a module
+python -m app.workers.application_worker
+
+# Or directly
+python app/workers/application_worker.py
+```
+
+### Rate Limiting
+
+The service includes per-user rate limiting:
+- Global middleware applies to all endpoints (configurable via `RATE_LIMIT_REQUESTS`)
+- Health check endpoints are excluded from rate limiting
+- Rate limit headers are included in all responses:
+  - `X-RateLimit-Limit`: Maximum requests allowed
+  - `X-RateLimit-Remaining`: Remaining requests in window
+  - `X-RateLimit-Reset`: Unix timestamp when window resets
+
+### Retry Mechanism
+
+Failed operations are retried with exponential backoff:
+- Base delay starts at `RETRY_BASE_DELAY` seconds
+- Delay doubles each attempt up to `RETRY_MAX_DELAY`
+- After `MAX_RETRIES` attempts, message goes to DLQ
+
+Error classification:
+- **Retryable**: Network timeouts, connection errors, rate limits, 5xx errors
+- **Non-retryable**: Invalid data, authentication failures, business logic errors
 
 ## Development Notes
 

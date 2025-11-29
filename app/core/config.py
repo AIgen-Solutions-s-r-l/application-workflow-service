@@ -25,6 +25,22 @@ class Settings(BaseSettings):
     # RabbitMQ settings
     rabbitmq_url: str = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
     middleware_queue: str = os.getenv("MIDDLEWARE_QUEUE", "middleware_notification_queue")
+    application_processing_queue: str = os.getenv("APPLICATION_PROCESSING_QUEUE", "application_processing_queue")
+    application_dlq: str = os.getenv("APPLICATION_DLQ", "application_dlq")
+
+    # Async processing settings
+    async_processing_enabled: bool = os.getenv("ASYNC_PROCESSING_ENABLED", "True").lower() == "true"
+
+    # Rate limiting settings
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
+    rate_limit_enabled: bool = os.getenv("RATE_LIMIT_ENABLED", "True").lower() == "true"
+    rate_limit_applications: str = os.getenv("RATE_LIMIT_APPLICATIONS", "100/hour")
+    rate_limit_requests: str = os.getenv("RATE_LIMIT_REQUESTS", "1000/hour")
+
+    # Retry settings
+    max_retries: int = int(os.getenv("MAX_RETRIES", "5"))
+    retry_base_delay: float = float(os.getenv("RETRY_BASE_DELAY", "1.0"))
+    retry_max_delay: float = float(os.getenv("RETRY_MAX_DELAY", "16.0"))
 
     # Authentication settings
     secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-here")
