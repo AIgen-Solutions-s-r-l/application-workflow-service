@@ -17,8 +17,11 @@ __all__ = [
     'DetailedJobData',
     'ApplicationStatusResponse',
     'ApplicationSubmitResponse',
+    'FilterParams',
     'PaginationParams',
     'PaginatedResponse',
+    'PaginatedJobsResponse',
+    'PaginationInfo',
 ]
 
 
@@ -37,6 +40,32 @@ class DetailedJobData(BaseModel):
     """
     resume_optimized: Optional[Dict[str, Any]] = None
     cover_letter: Optional[Dict[str, Any]] = None
+
+
+class FilterParams(BaseModel):
+    """
+    Parameters for filtering list endpoints.
+    """
+    portal: Optional[str] = Field(
+        default=None,
+        description="Filter by job portal (e.g., 'LinkedIn', 'Indeed')"
+    )
+    company_name: Optional[str] = Field(
+        default=None,
+        description="Filter by company name (partial match)"
+    )
+    title: Optional[str] = Field(
+        default=None,
+        description="Filter by job title (partial match)"
+    )
+    date_from: Optional[datetime] = Field(
+        default=None,
+        description="Filter applications from this date (ISO 8601)"
+    )
+    date_to: Optional[datetime] = Field(
+        default=None,
+        description="Filter applications until this date (ISO 8601)"
+    )
 
 
 class PaginationParams(BaseModel):

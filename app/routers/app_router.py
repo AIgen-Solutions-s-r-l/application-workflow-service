@@ -27,6 +27,7 @@ from app.models.application import ApplicationStatusResponse, ApplicationSubmitR
 from app.schemas.app_jobs import (
     DetailedJobData,
     JobApplicationRequest,
+    FilterParams,
     PaginationParams,
     PaginationInfo,
     PaginatedJobsResponse
@@ -192,20 +193,76 @@ async def get_application_status(
 # Helper Functions
 # -----------------------------------------------------------------------------
 
+def apply_filters(content: dict, filters: FilterParams) -> dict:
+    """
+    Apply filters to content dictionary.
+
+    Args:
+        content: Dictionary of app_id -> job data.
+        filters: Filter parameters.
+
+    Returns:
+        Filtered content dictionary.
+    """
+    if not any([filters.portal, filters.company_name, filters.title, filters.date_from, filters.date_to]):
+        return content
+
+    filtered = {}
+    for app_id, job_data in content.items():
+        # Portal filter (exact match, case-insensitive)
+        if filters.portal:
+            job_portal = job_data.get("portal", "")
+            if job_portal.lower() != filters.portal.lower():
+                continue
+
+        # Company name filter (partial match, case-insensitive)
+        if filters.company_name:
+            company = job_data.get("company_name", "") or job_data.get("company", "")
+            if filters.company_name.lower() not in company.lower():
+                continue
+
+        # Title filter (partial match, case-insensitive)
+        if filters.title:
+            title = job_data.get("title", "")
+            if filters.title.lower() not in title.lower():
+                continue
+
+        # Date filters (on created_at or applied_at field)
+        job_date = job_data.get("created_at") or job_data.get("applied_at")
+        if job_date:
+            if isinstance(job_date, str):
+                try:
+                    job_date = datetime.fromisoformat(job_date.replace("Z", "+00:00"))
+                except ValueError:
+                    job_date = None
+
+            if job_date:
+                if filters.date_from and job_date < filters.date_from:
+                    continue
+                if filters.date_to and job_date > filters.date_to:
+                    continue
+
+        filtered[app_id] = job_data
+
+    return filtered
+
+
 async def fetch_user_doc_paginated(
     collection,
     user_id: str,
     limit: int = 20,
-    cursor: Optional[str] = None
+    cursor: Optional[str] = None,
+    filters: Optional[FilterParams] = None
 ) -> tuple[dict, bool, Optional[str], int]:
     """
-    Fetch a user's document with pagination support.
+    Fetch a user's document with pagination and filtering support.
 
     Args:
         collection: MongoDB collection to query.
         user_id: The user ID to filter by.
         limit: Maximum number of items to return.
         cursor: Pagination cursor (encoded last document ID).
+        filters: Optional filter parameters.
 
     Returns:
         Tuple of (document, has_more, next_cursor, total_count).
@@ -216,8 +273,17 @@ async def fetch_user_doc_paginated(
     if not doc or "content" not in doc or not doc["content"]:
         return None, False, None, 0
 
+    content = doc["content"]
+
+    # Apply filters if provided
+    if filters:
+        content = apply_filters(content, filters)
+
+    if not content:
+        return None, False, None, 0
+
     # Get all content keys sorted (for consistent pagination)
-    all_keys = sorted(doc["content"].keys(), reverse=True)
+    all_keys = sorted(content.keys(), reverse=True)
     total_count = len(all_keys)
 
     # Apply cursor filtering on content keys
@@ -236,7 +302,7 @@ async def fetch_user_doc_paginated(
     page_keys = page_keys[:limit]
 
     # Build paginated content
-    paginated_content = {k: doc["content"][k] for k in page_keys if k in doc["content"]}
+    paginated_content = {k: content[k] for k in page_keys if k in content}
 
     # Create modified doc with paginated content
     paginated_doc = {**doc, "content": paginated_content}
@@ -292,7 +358,7 @@ def parse_applications(
     "/applied",
     summary="Get successful applications for the authenticated user",
     description=(
-        "Fetch all successful job applications with pagination, "
+        "Fetch all successful job applications with pagination and filtering, "
         "excluding resume and cover letter."
     ),
     response_model=PaginatedJobsResponse
@@ -300,25 +366,44 @@ def parse_applications(
 async def get_successful_applications(
     current_user=Depends(get_current_user),
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
-    cursor: Optional[str] = Query(default=None, description="Pagination cursor")
+    cursor: Optional[str] = Query(default=None, description="Pagination cursor"),
+    portal: Optional[str] = Query(default=None, description="Filter by portal (e.g., LinkedIn)"),
+    company_name: Optional[str] = Query(default=None, description="Filter by company name"),
+    title: Optional[str] = Query(default=None, description="Filter by job title"),
+    date_from: Optional[datetime] = Query(default=None, description="Filter from date (ISO 8601)"),
+    date_to: Optional[datetime] = Query(default=None, description="Filter until date (ISO 8601)")
 ):
     """
-    Get paginated list of successful applications.
+    Get paginated and filtered list of successful applications.
 
     Args:
         current_user: Authenticated user ID from JWT.
         limit: Number of items per page (1-100).
         cursor: Pagination cursor for next page.
+        portal: Filter by job portal.
+        company_name: Filter by company name (partial match).
+        title: Filter by job title (partial match).
+        date_from: Filter applications from this date.
+        date_to: Filter applications until this date.
 
     Returns:
         PaginatedJobsResponse with applications and pagination info.
     """
+    filters = FilterParams(
+        portal=portal,
+        company_name=company_name,
+        title=title,
+        date_from=date_from,
+        date_to=date_to
+    )
+
     try:
         doc, has_more, next_cursor, total_count = await fetch_user_doc_paginated(
             collection=success_applications_collection,
             user_id=current_user,
             limit=limit,
-            cursor=cursor
+            cursor=cursor,
+            filters=filters
         )
 
         if not doc:
@@ -436,7 +521,7 @@ async def get_successful_application_details(
     "/fail_applied",
     summary="Get failed applications for the authenticated user",
     description=(
-        "Fetch all failed job applications with pagination, "
+        "Fetch all failed job applications with pagination and filtering, "
         "excluding resume and cover letter."
     ),
     response_model=PaginatedJobsResponse
@@ -444,25 +529,44 @@ async def get_successful_application_details(
 async def get_failed_applications(
     current_user=Depends(get_current_user),
     limit: int = Query(default=20, ge=1, le=100, description="Items per page"),
-    cursor: Optional[str] = Query(default=None, description="Pagination cursor")
+    cursor: Optional[str] = Query(default=None, description="Pagination cursor"),
+    portal: Optional[str] = Query(default=None, description="Filter by portal (e.g., LinkedIn)"),
+    company_name: Optional[str] = Query(default=None, description="Filter by company name"),
+    title: Optional[str] = Query(default=None, description="Filter by job title"),
+    date_from: Optional[datetime] = Query(default=None, description="Filter from date (ISO 8601)"),
+    date_to: Optional[datetime] = Query(default=None, description="Filter until date (ISO 8601)")
 ):
     """
-    Get paginated list of failed applications.
+    Get paginated and filtered list of failed applications.
 
     Args:
         current_user: Authenticated user ID from JWT.
         limit: Number of items per page (1-100).
         cursor: Pagination cursor for next page.
+        portal: Filter by job portal.
+        company_name: Filter by company name (partial match).
+        title: Filter by job title (partial match).
+        date_from: Filter applications from this date.
+        date_to: Filter applications until this date.
 
     Returns:
         PaginatedJobsResponse with applications and pagination info.
     """
+    filters = FilterParams(
+        portal=portal,
+        company_name=company_name,
+        title=title,
+        date_from=date_from,
+        date_to=date_to
+    )
+
     try:
         doc, has_more, next_cursor, total_count = await fetch_user_doc_paginated(
             collection=failed_applications_collection,
             user_id=current_user,
             limit=limit,
-            cursor=cursor
+            cursor=cursor,
+            filters=filters
         )
 
         if not doc:

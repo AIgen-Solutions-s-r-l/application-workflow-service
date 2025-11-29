@@ -4,11 +4,13 @@ Queue service for publishing applications to the processing queue.
 This module handles publishing application data to RabbitMQ for
 asynchronous processing by the ApplicationWorker.
 """
-import json
+from datetime import datetime
 from typing import Optional
 
 from app.core.config import settings
 from app.core.rabbitmq_client import AsyncRabbitMQClient
+from app.core.correlation import get_correlation_id, add_correlation_to_message
+from app.core.metrics import record_queue_publish, record_dlq_message
 from app.log.logging import logger
 
 
@@ -67,17 +69,25 @@ class ApplicationQueueService:
                 "style": style
             }
 
+            # Add correlation ID for request tracing
+            message = add_correlation_to_message(message)
+
             await client.publish_message(
                 queue_name=settings.application_processing_queue,
                 message=message,
                 persistent=True
             )
 
+            # Record metrics
+            record_queue_publish(settings.application_processing_queue)
+
+            correlation_id = get_correlation_id()
             logger.info(
                 "Application {application_id} published to processing queue",
                 application_id=application_id,
                 user_id=user_id,
                 job_count=job_count,
+                correlation_id=correlation_id,
                 event_type="application_queued"
             )
 
@@ -116,8 +126,11 @@ class ApplicationQueueService:
                 "application_id": application_id,
                 "error_message": error_message,
                 "original_message": original_message,
-                "failed_at": __import__("datetime").datetime.utcnow().isoformat() + "Z"
+                "failed_at": datetime.utcnow().isoformat() + "Z"
             }
+
+            # Add correlation ID for request tracing
+            dlq_message = add_correlation_to_message(dlq_message)
 
             await client.publish_message(
                 queue_name=settings.application_dlq,
@@ -125,10 +138,15 @@ class ApplicationQueueService:
                 persistent=True
             )
 
+            # Record metrics
+            record_dlq_message(settings.application_processing_queue, type(Exception).__name__)
+
+            correlation_id = get_correlation_id()
             logger.warning(
                 "Application {application_id} published to DLQ",
                 application_id=application_id,
                 error=error_message,
+                correlation_id=correlation_id,
                 event_type="application_dlq"
             )
 

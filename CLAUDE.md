@@ -218,10 +218,17 @@ Authorization: Bearer <jwt_token>
 }
 ```
 
-### Application Retrieval (with Pagination)
+### Application Retrieval (with Pagination and Filtering)
 ```bash
-# Paginated list of successful applications
-GET /applied?limit=20&cursor=<base64_cursor>
+# Paginated list of successful applications with optional filters
+GET /applied?limit=20&cursor=<base64_cursor>&portal=LinkedIn&company_name=Google&title=Engineer&date_from=2025-01-01&date_to=2025-12-31
+
+# Available filters:
+# - portal: Filter by job portal (exact match, case-insensitive)
+# - company_name: Filter by company name (partial match)
+# - title: Filter by job title (partial match)
+# - date_from: Filter applications from this date (ISO 8601)
+# - date_to: Filter applications until this date (ISO 8601)
 
 # Response:
 {
@@ -237,12 +244,26 @@ GET /applied?limit=20&cursor=<base64_cursor>
 # Detailed info for specific application
 GET /applied/{app_id}
 
-# Failed applications (same pagination)
-GET /fail_applied?limit=20&cursor=<base64_cursor>
+# Failed applications (same pagination and filters)
+GET /fail_applied?limit=20&cursor=<base64_cursor>&portal=LinkedIn
 GET /fail_applied/{app_id}
 ```
 
 All endpoints require `Authorization: Bearer <jwt_token>` header.
+
+### Prometheus Metrics
+```bash
+GET /metrics
+# Returns Prometheus-formatted metrics for monitoring
+```
+
+Key metrics available:
+- `http_request_duration_seconds`: Request latency histogram
+- `http_requests_total`: Total request counter by endpoint/status
+- `applications_submitted_total`: Application submission counter
+- `queue_messages_published_total`: Queue publish counter
+- `dlq_messages_total`: Dead letter queue counter
+- `rate_limit_exceeded_total`: Rate limit violations counter
 
 ### Notification Payload Format
 
@@ -280,8 +301,9 @@ tests/
 ├── core/                    # Core component tests
 ├── routers/                 # API endpoint tests
 ├── integration/             # End-to-end workflow tests
-├── test_sprint1_features.py # Sprint 1 feature tests
-└── test_sprint2_features.py # Sprint 2 feature tests (async, rate limit, retry)
+├── test_sprint1_features.py # Sprint 1 feature tests (status, pagination, notifications)
+├── test_sprint2_features.py # Sprint 2 feature tests (async, rate limit, retry)
+└── test_sprint3_features.py # Sprint 3 feature tests (metrics, correlation, filtering)
 ```
 
 ### Async Testing
@@ -331,6 +353,20 @@ Failed operations are retried with exponential backoff:
 Error classification:
 - **Retryable**: Network timeouts, connection errors, rate limits, 5xx errors
 - **Non-retryable**: Invalid data, authentication failures, business logic errors
+
+### Correlation IDs
+
+All requests are traced with correlation IDs:
+- Incoming `X-Correlation-ID` header is used if present
+- New UUID is generated if no header provided
+- ID is included in response headers (`X-Correlation-ID`, `X-Request-ID`)
+- ID propagates to queue messages and log entries
+
+Use correlation IDs to trace requests across services:
+```bash
+curl -H "X-Correlation-ID: my-trace-123" /applications
+# Response includes: X-Correlation-ID: my-trace-123
+```
 
 ## Development Notes
 
