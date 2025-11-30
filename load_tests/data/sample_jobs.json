@@ -1,0 +1,94 @@
+{
+  "jobs": [
+    {
+      "id": "job_001",
+      "title": "Senior Software Engineer",
+      "description": "We are looking for a Senior Software Engineer to join our team. You will be responsible for designing and implementing high-quality software solutions.",
+      "portal": "LinkedIn",
+      "company": "Tech Innovations Inc",
+      "location": "San Francisco, CA",
+      "url": "https://example.com/jobs/001"
+    },
+    {
+      "id": "job_002",
+      "title": "Data Scientist",
+      "description": "Join our data team to build ML models and derive insights from large datasets. Experience with Python and TensorFlow required.",
+      "portal": "Indeed",
+      "company": "Data Analytics Corp",
+      "location": "New York, NY",
+      "url": "https://example.com/jobs/002"
+    },
+    {
+      "id": "job_003",
+      "title": "DevOps Engineer",
+      "description": "Manage our cloud infrastructure and CI/CD pipelines. Experience with AWS, Kubernetes, and Terraform preferred.",
+      "portal": "Glassdoor",
+      "company": "Cloud Systems Ltd",
+      "location": "Seattle, WA",
+      "url": "https://example.com/jobs/003"
+    },
+    {
+      "id": "job_004",
+      "title": "Product Manager",
+      "description": "Lead product development for our SaaS platform. 5+ years of product management experience required.",
+      "portal": "LinkedIn",
+      "company": "SaaS Solutions",
+      "location": "Austin, TX",
+      "url": "https://example.com/jobs/004"
+    },
+    {
+      "id": "job_005",
+      "title": "Frontend Developer",
+      "description": "Build beautiful and responsive web applications using React and TypeScript.",
+      "portal": "AngelList",
+      "company": "Startup XYZ",
+      "location": "Remote",
+      "url": "https://example.com/jobs/005"
+    },
+    {
+      "id": "job_006",
+      "title": "Backend Engineer",
+      "description": "Design and implement scalable backend services using Python and FastAPI.",
+      "portal": "LinkedIn",
+      "company": "API Masters",
+      "location": "Boston, MA",
+      "url": "https://example.com/jobs/006"
+    },
+    {
+      "id": "job_007",
+      "title": "Machine Learning Engineer",
+      "description": "Deploy and optimize ML models in production environments. Experience with MLOps tools required.",
+      "portal": "Indeed",
+      "company": "AI Pioneers",
+      "location": "Palo Alto, CA",
+      "url": "https://example.com/jobs/007"
+    },
+    {
+      "id": "job_008",
+      "title": "Security Engineer",
+      "description": "Protect our systems and data. Experience with penetration testing and security audits required.",
+      "portal": "Glassdoor",
+      "company": "SecureIT Corp",
+      "location": "Washington, DC",
+      "url": "https://example.com/jobs/008"
+    },
+    {
+      "id": "job_009",
+      "title": "Full Stack Developer",
+      "description": "Work on both frontend and backend of our web applications. React and Node.js experience required.",
+      "portal": "LinkedIn",
+      "company": "Full Stack Studio",
+      "location": "Denver, CO",
+      "url": "https://example.com/jobs/009"
+    },
+    {
+      "id": "job_010",
+      "title": "QA Engineer",
+      "description": "Ensure quality of our software through automated and manual testing. Selenium experience preferred.",
+      "portal": "Indeed",
+      "company": "Quality First Inc",
+      "location": "Chicago, IL",
+      "url": "https://example.com/jobs/010"
+    }
+  ]
+}

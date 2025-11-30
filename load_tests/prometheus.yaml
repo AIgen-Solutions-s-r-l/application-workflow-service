@@ -1,0 +1,39 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Application Manager Service metrics
+  - job_name: "application-manager"
+    static_configs:
+      - targets: ["app:8000"]
+    metrics_path: /metrics
+    scrape_interval: 5s
+
+  # Locust metrics (if enabled)
+  - job_name: "locust"
+    static_configs:
+      - targets: ["locust-master:8089"]
+    metrics_path: /stats/prometheus
+    scrape_interval: 5s
+
+  # MongoDB exporter (if added)
+  # - job_name: "mongodb"
+  #   static_configs:
+  #     - targets: ["mongodb-exporter:9216"]
+
+  # RabbitMQ metrics
+  - job_name: "rabbitmq"
+    static_configs:
+      - targets: ["rabbitmq:15692"]
+    scrape_interval: 10s
+
+  # Redis metrics (if redis-exporter added)
+  # - job_name: "redis"
+  #   static_configs:
+  #     - targets: ["redis-exporter:9121"]
+
+  # Prometheus self-monitoring
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]

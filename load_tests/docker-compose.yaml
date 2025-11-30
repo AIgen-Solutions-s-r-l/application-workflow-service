@@ -1,0 +1,224 @@
+version: "3.8"
+
+services:
+  # Application Manager Service
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+      - "8009:8000"
+    environment:
+      - SERVICE_NAME=application_manager_service
+      - MONGODB=mongodb://mongodb:27017
+      - MONGODB_DATABASE=resumes_loadtest
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=loadtest-secret-key-for-testing
+      - ALGORITHM=HS256
+      - DEBUG=false
+      - ENVIRONMENT=loadtest
+      - ASYNC_PROCESSING_ENABLED=true
+      - RATE_LIMIT_ENABLED=false  # Disable rate limiting for load tests
+      - MIGRATIONS_AUTO_RUN=true
+      - LOG_LEVEL=WARNING  # Reduce logging during load tests
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loadtest-network
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 1G
+
+  # Application Worker
+  worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: python -m app.workers.application_worker
+    environment:
+      - SERVICE_NAME=application_worker
+      - MONGODB=mongodb://mongodb:27017
+      - MONGODB_DATABASE=resumes_loadtest
+      - RABBITMQ_URL=amqp://guest:guest@rabbitmq:5672/
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=loadtest-secret-key-for-testing
+      - ALGORITHM=HS256
+      - DEBUG=false
+      - ENVIRONMENT=loadtest
+      - LOG_LEVEL=WARNING
+    depends_on:
+      - app
+      - mongodb
+      - rabbitmq
+    networks:
+      - loadtest-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+
+  # MongoDB
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=resumes_loadtest
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loadtest-network
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2G
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loadtest-network
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 512M
+
+  # Redis
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - loadtest-network
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # Locust Master
+  locust-master:
+    image: locustio/locust:2.20.0
+    ports:
+      - "8089:8089"
+    volumes:
+      - ./:/mnt/locust
+      - ../app:/mnt/locust/app:ro
+    environment:
+      - LOCUST_HOST=http://app:8000
+      - LOCUST_USERS=100
+      - LOCUST_SPAWN_RATE=10
+    command: >
+      -f /mnt/locust/locustfile.py
+      --master
+      --web-host=0.0.0.0
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - loadtest-network
+
+  # Locust Workers (for distributed testing)
+  locust-worker:
+    image: locustio/locust:2.20.0
+    volumes:
+      - ./:/mnt/locust
+      - ../app:/mnt/locust/app:ro
+    environment:
+      - LOCUST_HOST=http://app:8000
+    command: >
+      -f /mnt/locust/locustfile.py
+      --worker
+      --master-host=locust-master
+    depends_on:
+      - locust-master
+    networks:
+      - loadtest-network
+    deploy:
+      replicas: 4
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+      - "--web.console.templates=/usr/share/prometheus/consoles"
+    networks:
+      - loadtest-network
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.1.0
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - loadtest-network
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  loadtest-network:
+    driver: bridge
