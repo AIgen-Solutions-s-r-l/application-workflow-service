@@ -460,6 +460,18 @@ All errors follow a consistent format:
 ```
 application_manager_service/
 ├── app/
+│   ├── cli/                  # Command-line interface
+│   │   ├── commands/         # CLI command modules
+│   │   │   ├── apps.py       # Application management
+│   │   │   ├── config.py     # Configuration commands
+│   │   │   ├── export.py     # Data export
+│   │   │   ├── health.py     # Health checks
+│   │   │   ├── metrics.py    # Metrics display
+│   │   │   └── queue.py      # Queue management
+│   │   ├── client.py         # HTTP client wrapper
+│   │   ├── config.py         # CLI configuration
+│   │   ├── main.py           # CLI entry point
+│   │   └── output.py         # Rich output formatting
 │   ├── core/                 # Core functionality
 │   │   ├── auth.py           # JWT authentication
 │   │   ├── config.py         # Configuration settings
@@ -494,6 +506,145 @@ application_manager_service/
 ├── Dockerfile
 ├── pyproject.toml
 └── README.md
+```
+
+## CLI Tool
+
+The service includes a command-line interface for administration and monitoring.
+
+### Installation
+
+The CLI is installed automatically with the service:
+
+```bash
+# Using Poetry
+poetry install
+
+# Or install globally
+pip install -e .
+```
+
+### Configuration
+
+Configure the CLI using environment variables or a config file:
+
+```bash
+# Environment variables
+export APP_MANAGER_API_URL=http://localhost:8009
+export APP_MANAGER_API_TOKEN=your-jwt-token
+export APP_MANAGER_API_TIMEOUT=30
+
+# Or use the config command
+app-manager config set api_url http://localhost:8009
+app-manager config set api_token your-jwt-token
+```
+
+Configuration is stored in `~/.config/app-manager/config.env`.
+
+### Commands
+
+#### Health Checks
+
+```bash
+# Full health status
+app-manager health
+
+# Liveness check
+app-manager health --live
+
+# Readiness check
+app-manager health --ready
+```
+
+#### Application Management
+
+```bash
+# List successful applications
+app-manager apps list
+
+# List failed applications
+app-manager apps list --failed
+
+# Filter by portal/company
+app-manager apps list --portal LinkedIn --company Google
+
+# Get application details
+app-manager apps get <app_id>
+
+# Check application status
+app-manager apps status <app_id>
+
+# Retry a failed application
+app-manager apps retry <app_id>
+
+# Cancel a pending application
+app-manager apps cancel <app_id>
+```
+
+#### Queue Management
+
+```bash
+# View queue status
+app-manager queue status
+
+# Purge dead letter queue
+app-manager queue purge-dlq --force
+
+# Reprocess DLQ messages
+app-manager queue reprocess-dlq
+```
+
+#### Data Export
+
+```bash
+# Export to CSV
+app-manager export csv --output applications.csv
+
+# Export to Excel
+app-manager export excel --output applications.xlsx
+
+# Filter exports
+app-manager export csv --portal LinkedIn --from 2025-01-01 --to 2025-12-31
+
+# View export summary
+app-manager export summary
+```
+
+#### Metrics
+
+```bash
+# View metrics summary
+app-manager metrics
+
+# Raw Prometheus format
+app-manager metrics --raw
+
+# Filter specific metrics
+app-manager metrics --filter http_requests
+```
+
+#### Configuration Management
+
+```bash
+# Show current config
+app-manager config show
+
+# Set a value
+app-manager config set api_url http://production:8009
+
+# Get a value
+app-manager config get api_url
+
+# Reset to defaults
+app-manager config reset --force
+```
+
+### Output Formats
+
+Use `--json` flag for JSON output (useful for scripting):
+
+```bash
+app-manager apps list --json | jq '.data'
 ```
 
 ## Testing
