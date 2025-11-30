@@ -46,8 +46,18 @@ class Settings(BaseSettings):
     # Async processing settings
     async_processing_enabled: bool = os.getenv("ASYNC_PROCESSING_ENABLED", "True").lower() == "true"
 
+    # Redis settings
+    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    redis_password: str | None = os.getenv("REDIS_PASSWORD", None)
+    redis_ssl: bool = os.getenv("REDIS_SSL", "False").lower() == "true"
+
+    # Cache settings
+    cache_enabled: bool = os.getenv("CACHE_ENABLED", "True").lower() == "true"
+    cache_default_ttl: int = int(os.getenv("CACHE_DEFAULT_TTL", "300"))
+    cache_key_prefix: str = os.getenv("CACHE_KEY_PREFIX", "app_manager")
+    cache_fallback_to_memory: bool = os.getenv("CACHE_FALLBACK_TO_MEMORY", "True").lower() == "true"
+
     # Rate limiting settings
-    redis_url: str = os.getenv("REDIS_URL", "redis://localhost:6379")
     rate_limit_enabled: bool = os.getenv("RATE_LIMIT_ENABLED", "True").lower() == "true"
     rate_limit_applications: str = os.getenv("RATE_LIMIT_APPLICATIONS", "100/hour")
     rate_limit_requests: str = os.getenv("RATE_LIMIT_REQUESTS", "1000/hour")

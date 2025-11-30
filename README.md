@@ -663,6 +663,59 @@ pytest tests/services/test_application_uploader_service.py
 pytest -k "application"
 ```
 
+## Redis Caching
+
+The service supports distributed caching with Redis for improved performance and horizontal scaling.
+
+### Configuration
+
+```env
+# Redis connection
+REDIS_URL=redis://localhost:6379/0
+REDIS_PASSWORD=secret  # Optional
+REDIS_SSL=false
+
+# Cache settings
+CACHE_ENABLED=true
+CACHE_DEFAULT_TTL=300
+CACHE_KEY_PREFIX=app_manager
+CACHE_FALLBACK_TO_MEMORY=true
+```
+
+### Features
+
+- **Distributed caching**: Share cache state across multiple service instances
+- **Circuit breaker**: Automatic fallback to in-memory cache on Redis failure
+- **Key namespacing**: Structured keys with `CacheKey` utility class
+- **Health checks**: Redis included in `/health` and `/health/ready` endpoints
+- **Prometheus metrics**: Cache hit/miss rates, latency, circuit breaker state
+
+### Cache Keys
+
+| Pattern | TTL | Description |
+|---------|-----|-------------|
+| `app:{app_id}:status` | 60s | Application status |
+| `user:{user_id}:apps` | 300s | User applications list |
+| `ratelimit:{user_id}:{endpoint}` | window | Rate limit counters |
+| `idempotency:{key}` | 24h | Idempotency keys |
+
+### Circuit Breaker
+
+The cache includes a circuit breaker pattern:
+- **Closed**: Normal operation, requests go to Redis
+- **Open**: After 5 failures, requests use fallback cache
+- **Half-Open**: After 30s, tests Redis and closes if successful
+
+### Metrics
+
+```
+cache_operations_total{operation="get",status="hit"}
+cache_operations_total{operation="get",status="miss"}
+cache_operation_duration_seconds{operation="get"}
+cache_circuit_breaker_state  # 0=closed, 1=open, 2=half_open
+cache_fallback_operations_total{operation="get"}
+```
+
 ## Monitoring & Observability
 
 ### SLO Targets

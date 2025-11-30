@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.routers.healthchecks.fastapi_healthcheck import HealthCheckFactory, healthCheckRoute
 from app.routers.healthchecks.fastapi_healthcheck_mongodb import HealthCheckMongoDB
 from app.routers.healthchecks.fastapi_healthcheck_rabbitmq import HealthCheckRabbitMQ
+from app.routers.healthchecks.fastapi_healthcheck_redis import HealthCheckRedis
 
 router = APIRouter(tags=["healthcheck"])
 
@@ -68,6 +69,13 @@ def _get_health_check_factory() -> HealthCheckFactory:
             connection_uri=settings.rabbitmq_url, alias="rabbitmq", tags=("messaging", "rabbitmq")
         )
     )
+    # Add Redis health check if caching is enabled
+    if settings.cache_enabled:
+        factory.add(
+            HealthCheckRedis(
+                connection_uri=settings.redis_url, alias="redis", tags=("cache", "redis")
+            )
+        )
     return factory
 
 

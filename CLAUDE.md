@@ -10,10 +10,12 @@ Application Manager Service is a Python FastAPI backend that manages job applica
 
 - **Framework**: FastAPI (Python 3.11+)
 - **Database**: MongoDB (with Motor async driver)
+- **Cache**: Redis (with circuit breaker and fallback)
 - **Message Broker**: RabbitMQ (aio-pika)
 - **Authentication**: JWT-based (python-jose)
 - **Testing**: pytest with pytest-asyncio
 - **Dependency Management**: Poetry
+- **CLI**: typer with rich formatting
 
 ## Development Commands
 

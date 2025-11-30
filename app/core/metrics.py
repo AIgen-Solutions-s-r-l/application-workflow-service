@@ -155,6 +155,35 @@ DB_OPERATION_TOTAL = Counter(
 
 
 # =============================================================================
+# Cache Metrics
+# =============================================================================
+
+CACHE_OPERATIONS = Counter(
+    "cache_operations_total",
+    "Total cache operations",
+    ["operation", "status"],  # operation: get/set/delete, status: hit/miss/error
+)
+
+CACHE_OPERATION_DURATION = Histogram(
+    "cache_operation_duration_seconds",
+    "Cache operation duration in seconds",
+    ["operation"],
+    buckets=(0.0001, 0.0005, 0.001, 0.005, 0.01, 0.025, 0.05, 0.1),
+)
+
+CACHE_CIRCUIT_BREAKER_STATE = Gauge(
+    "cache_circuit_breaker_state",
+    "Cache circuit breaker state (0=closed, 1=open, 2=half_open)",
+)
+
+CACHE_FALLBACK_OPERATIONS = Counter(
+    "cache_fallback_operations_total",
+    "Total cache operations using fallback",
+    ["operation"],
+)
+
+
+# =============================================================================
 # Middleware
 # =============================================================================
 
@@ -298,6 +327,35 @@ def record_worker_retry(worker_name: str, attempt: int):
 def set_worker_active(worker_name: str, active: bool):
     """Set worker active status."""
     WORKER_ACTIVE.labels(worker_name=worker_name).set(1 if active else 0)
+
+
+def record_cache_operation(operation: str, status: str, duration: float | None = None):
+    """
+    Record a cache operation.
+
+    Args:
+        operation: Type of operation (get, set, delete)
+        status: Result status (hit, miss, error)
+        duration: Optional operation duration in seconds
+    """
+    CACHE_OPERATIONS.labels(operation=operation, status=status).inc()
+    if duration is not None:
+        CACHE_OPERATION_DURATION.labels(operation=operation).observe(duration)
+
+
+def record_cache_fallback(operation: str):
+    """Record a cache fallback operation."""
+    CACHE_FALLBACK_OPERATIONS.labels(operation=operation).inc()
+
+
+def set_cache_circuit_breaker_state(state: int):
+    """
+    Set cache circuit breaker state.
+
+    Args:
+        state: 0=closed, 1=open, 2=half_open
+    """
+    CACHE_CIRCUIT_BREAKER_STATE.set(state)
 
 
 def get_metrics() -> bytes:
