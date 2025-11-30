@@ -18,6 +18,47 @@ from app.routers.metrics_router import router as metrics_router
 from app.routers.websocket_router import router as websocket_router
 
 
+async def run_migrations():
+    """Run pending database migrations if enabled."""
+    if not settings.migrations_enabled or not settings.migrations_auto_run:
+        logger.info("Auto-migrations disabled, skipping...")
+        return
+
+    try:
+        from app.core.mongo import mongo_client
+        from app.migrations.runner import MigrationRunner
+
+        db = mongo_client[settings.mongodb_database]
+        runner = MigrationRunner(db, lock_timeout=settings.migrations_lock_timeout)
+
+        await runner.initialize()
+        pending = await runner.get_pending_migrations()
+
+        if pending:
+            logger.info(
+                f"Running {len(pending)} pending migration(s)...",
+                event_type="migrations_starting",
+                count=len(pending),
+            )
+            records = await runner.migrate_up()
+            logger.info(
+                f"Applied {len(records)} migration(s) successfully",
+                event_type="migrations_complete",
+                count=len(records),
+            )
+        else:
+            logger.info("No pending migrations", event_type="migrations_up_to_date")
+
+    except Exception as e:
+        logger.error(
+            f"Migration failed: {e}",
+            event_type="migrations_failed",
+            error=str(e),
+        )
+        # Don't fail startup, but log the error
+        # In production, you may want to fail startup on migration errors
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager for startup and shutdown events."""
@@ -34,6 +75,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
         # Continue startup but log the error
+
+    # Run migrations
+    await run_migrations()
 
     yield
 

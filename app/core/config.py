@@ -67,6 +67,11 @@ class Settings(BaseSettings):
     retry_base_delay: float = float(os.getenv("RETRY_BASE_DELAY", "1.0"))
     retry_max_delay: float = float(os.getenv("RETRY_MAX_DELAY", "16.0"))
 
+    # Migration settings
+    migrations_enabled: bool = os.getenv("MIGRATIONS_ENABLED", "True").lower() == "true"
+    migrations_auto_run: bool = os.getenv("MIGRATIONS_AUTO_RUN", "True").lower() == "true"
+    migrations_lock_timeout: int = int(os.getenv("MIGRATIONS_LOCK_TIMEOUT", "300"))
+
     # Authentication settings
     secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-here")
     algorithm: str = os.getenv("ALGORITHM", "HS256")

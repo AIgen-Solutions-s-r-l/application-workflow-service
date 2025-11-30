@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 import typer
 from rich.console import Console
 
-from app.cli.commands import apps, config, export, health, metrics, queue
+from app.cli.commands import apps, config, export, health, metrics, migrate, queue
 
 # Version from pyproject.toml
 __version__ = "1.0.0"
@@ -25,6 +25,7 @@ app.add_typer(queue.app, name="queue", help="Queue management")
 app.add_typer(export.app, name="export", help="Data export")
 app.add_typer(metrics.app, name="metrics", help="Service metrics")
 app.add_typer(config.app, name="config", help="Configuration management")
+app.add_typer(migrate.migrate_app, name="migrate", help="Database migrations")
 
 console = Console()
 
