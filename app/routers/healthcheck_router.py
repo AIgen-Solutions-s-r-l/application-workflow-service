@@ -34,7 +34,7 @@ class HealthResponse(BaseModel):
     """Full health check response."""
 
     status: str  # "healthy", "unhealthy", "degraded"
-    version: str = "1.1.0"
+    version: str = "1.2.0"
     service: str = "application-manager-service"
     environment: str
     timestamp: str

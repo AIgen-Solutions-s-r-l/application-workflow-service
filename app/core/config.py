@@ -72,6 +72,32 @@ class Settings(BaseSettings):
     migrations_auto_run: bool = os.getenv("MIGRATIONS_AUTO_RUN", "True").lower() == "true"
     migrations_lock_timeout: int = int(os.getenv("MIGRATIONS_LOCK_TIMEOUT", "300"))
 
+    # API Versioning settings
+    api_default_version: str = os.getenv("API_DEFAULT_VERSION", "v1")
+    api_supported_versions: list[str] = os.getenv(
+        "API_SUPPORTED_VERSIONS", "v1,v2"
+    ).split(",")
+    api_deprecated_versions: list[str] = os.getenv(
+        "API_DEPRECATED_VERSIONS", ""
+    ).split(",") if os.getenv("API_DEPRECATED_VERSIONS") else []
+    api_deprecation_warnings: bool = os.getenv("API_DEPRECATION_WARNINGS", "True").lower() == "true"
+
+    @property
+    def api_sunset_dates(self) -> dict[str, str]:
+        """
+        Returns sunset dates for deprecated API versions.
+        Format: API_SUNSET_DATES=v1:2025-12-31,v2:2026-06-30
+        """
+        dates_str = os.getenv("API_SUNSET_DATES", "")
+        if not dates_str:
+            return {}
+        dates = {}
+        for item in dates_str.split(","):
+            if ":" in item:
+                version, date = item.split(":", 1)
+                dates[version.strip()] = date.strip()
+        return dates
+
     # Authentication settings
     secret_key: str = os.getenv("SECRET_KEY", "your-secret-key-here")
     algorithm: str = os.getenv("ALGORITHM", "HS256")

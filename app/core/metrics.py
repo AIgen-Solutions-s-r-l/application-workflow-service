@@ -124,6 +124,23 @@ WORKER_RETRY_COUNT = Counter(
 
 
 # =============================================================================
+# API Version Metrics
+# =============================================================================
+
+api_version_requests_total = Counter(
+    "api_version_requests_total",
+    "Total API requests by version",
+    ["version", "endpoint", "method"],
+)
+
+deprecated_api_calls_total = Counter(
+    "deprecated_api_calls_total",
+    "Total calls to deprecated API versions",
+    ["version", "endpoint"],
+)
+
+
+# =============================================================================
 # Rate Limiting Metrics
 # =============================================================================
 

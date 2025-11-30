@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from fastapi.responses import RedirectResponse
+
 from app.core.config import settings
 from app.core.correlation import CorrelationIdMiddleware
 from app.core.database import close_database, init_database
@@ -9,13 +11,22 @@ from app.core.metrics import MetricsMiddleware
 from app.core.rate_limit import RateLimitMiddleware
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.core.tracing import init_tracing, instrument_fastapi
+from app.core.versioning import APIVersionMiddleware
 from app.log.logging import logger
-from app.routers.app_router import router as application_router
-from app.routers.batch_router import router as batch_router
-from app.routers.export_router import router as export_router
+
+# Versioned routers
+from app.routers.v1 import router as v1_router
+from app.routers.v2 import router as v2_router
+
+# Non-versioned routers (health, metrics, websocket)
 from app.routers.healthcheck_router import router as healthcheck_router
 from app.routers.metrics_router import router as metrics_router
 from app.routers.websocket_router import router as websocket_router
+
+# Legacy routers for backward compatibility (will redirect to v1)
+from app.routers.app_router import router as legacy_application_router
+from app.routers.batch_router import router as legacy_batch_router
+from app.routers.export_router import router as legacy_export_router
 
 
 async def run_migrations():
@@ -91,7 +102,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Application Manager Service",
     description="Manages job application workflows with async processing",
-    version="1.0.0",
+    version="1.2.0",
     lifespan=lifespan,
 )
 
@@ -102,10 +113,13 @@ app.add_middleware(CorrelationIdMiddleware)
 # 2. Security headers middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
-# 3. Metrics middleware (captures all requests with timing)
+# 3. API Version middleware (adds version headers and deprecation notices)
+app.add_middleware(APIVersionMiddleware)
+
+# 4. Metrics middleware (captures all requests with timing)
 app.add_middleware(MetricsMiddleware)
 
-# 4. Rate limiting middleware
+# 5. Rate limiting middleware
 if settings.rate_limit_enabled:
     app.add_middleware(RateLimitMiddleware)
 
@@ -113,16 +127,39 @@ if settings.rate_limit_enabled:
 # Root endpoint for testing
 @app.get("/")
 async def root():
-    return {"message": "Application Manager Service is running!"}
+    return {
+        "message": "Application Manager Service is running!",
+        "api_versions": settings.api_supported_versions,
+        "default_version": settings.api_default_version,
+    }
 
 
-# Include routers
-app.include_router(application_router)
+# =============================================================================
+# Versioned API Routers
+# =============================================================================
+
+# Include versioned routers (primary API endpoints)
+app.include_router(v1_router)
+app.include_router(v2_router)
+
+# =============================================================================
+# Non-versioned Routers (Infrastructure)
+# =============================================================================
+
+# Health checks, metrics, and websocket don't need versioning
 app.include_router(healthcheck_router)
 app.include_router(metrics_router)
 app.include_router(websocket_router)
-app.include_router(batch_router)
-app.include_router(export_router)
+
+# =============================================================================
+# Legacy Routes (Backward Compatibility)
+# =============================================================================
+
+# Legacy routes are deprecated but maintained for backward compatibility
+# They function identically to v1 but without the /v1 prefix
+app.include_router(legacy_application_router, deprecated=True)
+app.include_router(legacy_batch_router, deprecated=True)
+app.include_router(legacy_export_router, deprecated=True)
 
 # Instrument FastAPI for tracing
 instrument_fastapi(app)

@@ -178,13 +178,73 @@ RATE_LIMIT_REQUESTS=1000/hour
 MAX_RETRIES=5
 RETRY_BASE_DELAY=1.0
 RETRY_MAX_DELAY=16.0
+
+# API Versioning
+API_DEFAULT_VERSION=v1
+API_SUPPORTED_VERSIONS=v1,v2
+API_DEPRECATED_VERSIONS=
+API_DEPRECATION_WARNINGS=true
+API_SUNSET_DATES=
+```
+
+## API Versioning
+
+The API supports URL path versioning with both v1 and v2 endpoints:
+
+### Version Strategy
+
+- **v1**: Current stable API (default)
+- **v2**: Next-generation API with breaking changes
+- **Legacy**: Unversioned routes still work but are deprecated
+
+### URL Structure
+
+```
+/v1/applications      # v1 endpoints
+/v2/applications      # v2 endpoints
+/applications         # Legacy (deprecated, same as v1)
+```
+
+### Version Headers
+
+All responses include:
+- `X-API-Version`: Current API version used
+
+For deprecated versions:
+- `Deprecation: true`
+- `Sunset: <date>`
+- `Link: </v2/>; rel="successor-version"`
+- `X-Deprecation-Warning`: Migration guidance
+
+### v2 Breaking Changes
+
+| v1 Field | v2 Field | Reason |
+|----------|----------|--------|
+| `application_id` | `id` | Standardization |
+| `company_name` | `company.name` | Nested structure |
+| `status: string` | `status.value` | Status object with metadata |
+| Pagination in body | Pagination in headers | REST best practices |
+| - | `_links` | HATEOAS navigation |
+
+### Version-Specific Metrics
+
+```prometheus
+# Track usage by version
+api_version_requests_total{version="v1", endpoint="/applications"} 1000
+api_version_requests_total{version="v2", endpoint="/applications"} 500
+
+# Deprecation tracking
+deprecated_api_calls_total{version="v1"} 800
 ```
 
 ## API Endpoints
 
+All endpoints below are available under both `/v1/` and `/` (legacy) prefixes.
+v2 endpoints use different response structures (see API Versioning section).
+
 ### Application Submission
 ```bash
-POST /applications
+POST /v1/applications
 Authorization: Bearer <jwt_token>
 Content-Type: multipart/form-data
 
@@ -193,19 +253,35 @@ Content-Type: multipart/form-data
 -F 'style=samudum_bold'
 -F 'cv=@/path/to/file.pdf'  # Optional
 
-# Response (new format with tracking):
+# Response (v1):
 {
     "application_id": "abc123",
     "status": "pending",
-    "status_url": "/applications/abc123/status",
+    "status_url": "/v1/applications/abc123/status",
     "job_count": 5,
     "created_at": "2025-02-27T10:00:00Z"
+}
+
+# Response (v2):
+{
+    "id": "abc123",
+    "status": {
+        "value": "pending",
+        "updated_at": "2025-02-27T10:00:00Z",
+        "message": "Application submitted successfully"
+    },
+    "job_count": 5,
+    "created_at": "2025-02-27T10:00:00Z",
+    "_links": {
+        "self": "/v2/applications/abc123",
+        "status": "/v2/applications/abc123/status"
+    }
 }
 ```
 
 ### Application Status
 ```bash
-GET /applications/{application_id}/status
+GET /v1/applications/{application_id}/status
 Authorization: Bearer <jwt_token>
 
 # Response:
