@@ -22,6 +22,7 @@ from app.routers.v2 import router as v2_router
 from app.routers.healthcheck_router import router as healthcheck_router
 from app.routers.metrics_router import router as metrics_router
 from app.routers.admin_router import router as admin_router
+from app.routers.scheduler_router import router as scheduler_router
 from app.routers.webhook_router import router as webhook_router
 from app.routers.websocket_router import router as websocket_router
 
@@ -92,10 +93,28 @@ async def lifespan(app: FastAPI):
     # Run migrations
     await run_migrations()
 
+    # Start scheduler
+    try:
+        from app.scheduler.scheduler import start_scheduler
+
+        await start_scheduler()
+    except Exception as e:
+        logger.error(f"Failed to start scheduler: {e}")
+        # Continue without scheduler
+
     yield
 
     # Shutdown
     logger.info("Shutting down Application Manager Service...")
+
+    # Stop scheduler
+    try:
+        from app.scheduler.scheduler import stop_scheduler
+
+        await stop_scheduler()
+    except Exception as e:
+        logger.error(f"Error stopping scheduler: {e}")
+
     await close_database()
     logger.info("Shutdown complete")
 
@@ -104,7 +123,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Application Manager Service",
     description="Manages job application workflows with async processing",
-    version="1.4.0",
+    version="1.5.0",
     lifespan=lifespan,
 )
 
@@ -154,6 +173,7 @@ app.include_router(metrics_router)
 app.include_router(websocket_router)
 app.include_router(webhook_router)
 app.include_router(admin_router)
+app.include_router(scheduler_router)
 
 # =============================================================================
 # Legacy Routes (Backward Compatibility)

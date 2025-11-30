@@ -109,6 +109,12 @@ class Settings(BaseSettings):
     admin_audit_retention_days: int = int(os.getenv("ADMIN_AUDIT_RETENTION_DAYS", "90"))
     admin_analytics_cache_ttl: int = int(os.getenv("ADMIN_ANALYTICS_CACHE_TTL", "300"))
 
+    # Scheduler settings
+    scheduler_enabled: bool = os.getenv("SCHEDULER_ENABLED", "True").lower() == "true"
+    scheduler_timezone: str = os.getenv("SCHEDULER_TIMEZONE", "UTC")
+    cleanup_retention_days: int = int(os.getenv("CLEANUP_RETENTION_DAYS", "90"))
+    dlq_alert_threshold: int = int(os.getenv("DLQ_ALERT_THRESHOLD", "10"))
+
     # Webhook settings
     webhooks_enabled: bool = os.getenv("WEBHOOKS_ENABLED", "True").lower() == "true"
     webhook_timeout_seconds: int = int(os.getenv("WEBHOOK_TIMEOUT_SECONDS", "30"))

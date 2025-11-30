@@ -5,7 +5,7 @@ from typing import Annotated, Optional
 import typer
 from rich.console import Console
 
-from app.cli.commands import admin, apps, config, export, health, metrics, migrate, queue, webhooks
+from app.cli.commands import admin, apps, config, export, health, metrics, migrate, queue, scheduler, webhooks
 
 # Version from pyproject.toml
 __version__ = "1.0.0"
@@ -28,6 +28,7 @@ app.add_typer(config.app, name="config", help="Configuration management")
 app.add_typer(migrate.migrate_app, name="migrate", help="Database migrations")
 app.add_typer(webhooks.app, name="webhooks", help="Webhook management")
 app.add_typer(admin.app, name="admin", help="Admin dashboard and analytics")
+app.add_typer(scheduler.app, name="scheduler", help="Background job scheduler")
 
 console = Console()
 

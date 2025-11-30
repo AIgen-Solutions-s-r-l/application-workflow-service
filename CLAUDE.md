@@ -118,6 +118,7 @@ app/
 - `failed_app`: Failed applications
 - `webhooks`: Webhook registrations per user
 - `webhook_deliveries`: Webhook delivery history (TTL: 30 days)
+- `scheduler_history`: Job execution records (TTL: 30 days)
 
 ### Application Status Lifecycle
 
@@ -846,6 +847,73 @@ app-manager admin analytics errors   # Error analytics
 app-manager admin queues             # Queue status
 app-manager admin system             # System configuration
 ```
+
+### Background Job Scheduler (`app/scheduler/`)
+
+APScheduler-based background job scheduling for maintenance and monitoring tasks:
+
+**Scheduled Jobs:**
+- `cleanup_old_applications`: Daily at 2am - Removes applications older than retention period
+- `cleanup_expired_idempotency`: Hourly - Cleans up expired idempotency keys
+- `cleanup_old_webhook_deliveries`: Daily at 3am - Removes old webhook delivery records
+- `deep_health_check`: Every 5 minutes - Comprehensive system health check
+- `dlq_alert_check`: Every 10 minutes - Monitors DLQ for stuck messages
+
+**API Endpoints:**
+```bash
+# Get scheduler status
+GET /scheduler/status
+# Returns: {"running": true, "job_count": 5, "enabled": true, "timezone": "UTC"}
+
+# List all jobs
+GET /scheduler/jobs
+# Returns: {"jobs": [...], "scheduler_running": true, "job_count": 5}
+
+# Get job details
+GET /scheduler/jobs/{job_id}
+# Returns: job info with execution history and statistics
+
+# Trigger job manually (OPERATOR role)
+POST /scheduler/jobs/{job_id}/run
+
+# Pause job (OPERATOR role)
+POST /scheduler/jobs/{job_id}/pause
+
+# Resume job (OPERATOR role)
+POST /scheduler/jobs/{job_id}/resume
+
+# Get execution history
+GET /scheduler/history?status=failed&limit=50
+GET /scheduler/jobs/{job_id}/history
+```
+
+**Configuration:**
+```env
+SCHEDULER_ENABLED=true
+SCHEDULER_TIMEZONE=UTC
+CLEANUP_RETENTION_DAYS=90
+DLQ_ALERT_THRESHOLD=10
+```
+
+**CLI Commands:**
+```bash
+app-manager scheduler list           # List all scheduled jobs
+app-manager scheduler status         # Show scheduler status
+app-manager scheduler job <id>       # Get job details with stats
+app-manager scheduler run <id>       # Trigger job immediately
+app-manager scheduler pause <id>     # Pause a job
+app-manager scheduler resume <id>    # Resume a paused job
+app-manager scheduler history        # View execution history
+```
+
+**Dependencies:**
+The scheduler uses APScheduler which is an optional dependency:
+- If APScheduler is installed, scheduler features are fully functional
+- If not installed, the service starts normally but scheduler features are disabled
+- Install with: `pip install apscheduler`
+
+**MongoDB Collections:**
+- `scheduler_history`: Job execution records (TTL: 30 days)
 
 ## Observability
 
