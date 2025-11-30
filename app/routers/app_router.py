@@ -217,6 +217,10 @@ def apply_filters(content: dict, filters: FilterParams) -> dict:
                     job_date = None
 
             if job_date:
+                # Make job_date naive for comparison if it's timezone-aware
+                if job_date.tzinfo is not None:
+                    job_date = job_date.replace(tzinfo=None)
+
                 if filters.date_from and job_date < filters.date_from:
                     continue
                 if filters.date_to and job_date > filters.date_to:

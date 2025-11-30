@@ -1,6 +1,6 @@
 """Metrics commands."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -18,7 +18,7 @@ def metrics(
         typer.Option("--raw", "-r", help="Show raw Prometheus format"),
     ] = False,
     filter_metric: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--filter", "-f", help="Filter metrics by name pattern"),
     ] = None,
 ) -> None:

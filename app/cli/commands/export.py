@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -13,9 +13,9 @@ app = typer.Typer(help="Data export commands")
 
 
 def _build_export_params(
-    portal: str | None,
-    date_from: str | None,
-    date_to: str | None,
+    portal: Optional[str],
+    date_from: Optional[str],
+    date_to: Optional[str],
     include_successful: bool,
     include_failed: bool,
 ) -> dict:
@@ -35,19 +35,19 @@ def _build_export_params(
 @app.command("csv")
 def export_csv(
     output: Annotated[
-        Path | None,
+        Optional[Path],
         typer.Option("--output", "-o", help="Output file path (default: stdout)"),
     ] = None,
     portal: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--portal", "-p", help="Filter by portal"),
     ] = None,
     date_from: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--from", help="Filter from date (YYYY-MM-DD)"),
     ] = None,
     date_to: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--to", help="Filter to date (YYYY-MM-DD)"),
     ] = None,
     include_successful: Annotated[
@@ -99,15 +99,15 @@ def export_excel(
         typer.Option("--output", "-o", help="Output file path"),
     ] = Path(f"applications_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"),
     portal: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--portal", "-p", help="Filter by portal"),
     ] = None,
     date_from: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--from", help="Filter from date (YYYY-MM-DD)"),
     ] = None,
     date_to: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--to", help="Filter to date (YYYY-MM-DD)"),
     ] = None,
     include_successful: Annotated[

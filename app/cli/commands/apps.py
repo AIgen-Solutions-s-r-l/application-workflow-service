@@ -1,6 +1,6 @@
 """Application management commands."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -19,21 +19,21 @@ app = typer.Typer(help="Application management commands")
 @app.command("list")
 def list_apps(
     status: Annotated[
-        str | None,
+        Optional[str],
         typer.Option(
             "--status", "-s", help="Filter by status (pending, processing, success, failed)"
         ),
     ] = None,
     portal: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--portal", "-p", help="Filter by portal (e.g., LinkedIn, Indeed)"),
     ] = None,
     company: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--company", "-c", help="Filter by company name"),
     ] = None,
     title: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--title", "-t", help="Filter by job title"),
     ] = None,
     limit: Annotated[
@@ -41,7 +41,7 @@ def list_apps(
         typer.Option("--limit", "-n", help="Number of results to return"),
     ] = 20,
     cursor: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--cursor", help="Pagination cursor for next page"),
     ] = None,
     failed: Annotated[

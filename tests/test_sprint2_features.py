@@ -427,11 +427,12 @@ class TestApplicationWorker:
                 "jobs": [{"title": "Test Job"}]
             })
 
-            with patch.object(ApplicationWorker, '_uploader') as mock_uploader:
+            with patch('app.workers.application_worker.ApplicationUploaderService') as MockUploader:
+                mock_uploader = MagicMock()
                 mock_uploader.update_application_status = AsyncMock(return_value=True)
+                MockUploader.return_value = mock_uploader
 
                 worker = ApplicationWorker()
-                worker._uploader = mock_uploader
 
                 await worker.process_application(
                     application_id=str(ObjectId()),

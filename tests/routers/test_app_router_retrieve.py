@@ -1,23 +1,31 @@
-import pytest
+"""Tests for application retrieval endpoints."""
+
 import json
-from unittest.mock import AsyncMock, patch, MagicMock
+
+import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+from unittest.mock import AsyncMock, patch
+
 from app.core.auth import get_current_user
+from app.main import app
 
 # Mock authentication for tests
 TEST_USER_ID = "test_user_123"
 
+
 async def mock_get_current_user():
     return TEST_USER_ID
 
+
 # Override the auth dependency for tests
 app.dependency_overrides[get_current_user] = mock_get_current_user
+
 
 @pytest.fixture
 def test_client():
     """Create a test client for FastAPI."""
     return TestClient(app)
+
 
 @pytest.mark.asyncio
 async def test_get_successful_applications(test_client):
@@ -29,41 +37,57 @@ async def test_get_successful_applications(test_client):
             "app1": {
                 "title": "Software Engineer",
                 "description": "Test job description",
-                "portal": "LinkedIn"
+                "portal": "LinkedIn",
             },
             "app2": {
                 "title": "Data Scientist",
                 "description": "Data science position",
-                "portal": "Indeed"
-            }
-        }
+                "portal": "Indeed",
+            },
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.success_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get("/applied")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, dict)
-        assert len(data) == 2
-        assert "app1" in data
-        assert "app2" in data
-        assert data["app1"]["title"] == "Software Engineer"
-        assert data["app2"]["title"] == "Data Scientist"
+        assert "data" in data
+        assert "pagination" in data
+        assert len(data["data"]) == 2
+        assert "app1" in data["data"]
+        assert "app2" in data["data"]
+        assert data["data"]["app1"]["title"] == "Software Engineer"
+        assert data["data"]["app2"]["title"] == "Data Scientist"
+
 
 @pytest.mark.asyncio
 async def test_get_successful_applications_empty(test_client):
     """Test handling when no successful applications are found."""
     # Arrange
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(side_effect=Exception("No valid successful applications found for this user."))):
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=None)
+
+    with patch(
+        "app.routers.app_router.success_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get("/applied")
-        
+
         # Assert
-        assert response.status_code == 500
-        assert "Failed to fetch successful apps" in response.json()["detail"]
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"] == {}
+        assert data["pagination"]["has_more"] is False
+        assert data["pagination"]["total_count"] == 0
+
 
 @pytest.mark.asyncio
 async def test_get_successful_application_details(test_client):
@@ -78,15 +102,20 @@ async def test_get_successful_application_details(test_client):
                 "description": "Test job description",
                 "portal": "LinkedIn",
                 "resume_optimized": json.dumps({"text": "test resume"}),
-                "cover_letter": json.dumps({"text": "test cover letter"})
+                "cover_letter": json.dumps({"text": "test cover letter"}),
             }
-        }
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.success_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get(f"/applied/{app_id}")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -94,6 +123,7 @@ async def test_get_successful_application_details(test_client):
         assert "cover_letter" in data
         assert data["resume_optimized"]["text"] == "test resume"
         assert data["cover_letter"]["text"] == "test cover letter"
+
 
 @pytest.mark.asyncio
 async def test_get_successful_application_details_not_found(test_client):
@@ -106,22 +136,24 @@ async def test_get_successful_application_details_not_found(test_client):
             "different_app": {
                 "title": "Software Engineer",
                 "description": "Test job description",
-                "portal": "LinkedIn"
+                "portal": "LinkedIn",
             }
-        }
+        },
     }
-    
-    # Create a HTTPException with status_code=404 that will be raised
-    from fastapi import HTTPException
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)), \
-         patch('app.routers.app_router.logger'):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.success_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get(f"/applied/{app_id}")
-        
+
         # Assert
-        # In actual code, the error is caught and re-raised as 500, so we check for 500
-        assert response.status_code == 500
+        assert response.status_code == 404
         assert "Application ID not found" in response.json()["detail"]
+
 
 @pytest.mark.asyncio
 async def test_get_successful_application_details_json_error(test_client):
@@ -133,18 +165,24 @@ async def test_get_successful_application_details_json_error(test_client):
         "content": {
             app_id: {
                 "resume_optimized": "This is not valid JSON",
-                "cover_letter": "This is also not valid JSON"
+                "cover_letter": "This is also not valid JSON",
             }
-        }
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.success_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get(f"/applied/{app_id}")
-        
+
         # Assert
         assert response.status_code == 500
         assert "Failed to fetch detailed application info" in response.json()["detail"]
+
 
 @pytest.mark.asyncio
 async def test_get_failed_applications(test_client):
@@ -156,34 +194,49 @@ async def test_get_failed_applications(test_client):
             "app1": {
                 "title": "Failed Job Application",
                 "description": "Test job description",
-                "portal": "LinkedIn"
+                "portal": "LinkedIn",
             }
-        }
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.failed_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get("/fail_applied")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
-        assert isinstance(data, dict)
-        assert len(data) == 1
-        assert "app1" in data
-        assert data["app1"]["title"] == "Failed Job Application"
+        assert "data" in data
+        assert len(data["data"]) == 1
+        assert "app1" in data["data"]
+        assert data["data"]["app1"]["title"] == "Failed Job Application"
+
 
 @pytest.mark.asyncio
 async def test_get_failed_applications_empty(test_client):
     """Test handling when no failed applications are found."""
     # Arrange
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(side_effect=Exception("No valid failed applications found for this user."))):
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=None)
+
+    with patch(
+        "app.routers.app_router.failed_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get("/fail_applied")
-        
+
         # Assert
-        assert response.status_code == 500
-        assert "Failed to fetch failed apps" in response.json()["detail"]
+        assert response.status_code == 200
+        data = response.json()
+        assert data["data"] == {}
+        assert data["pagination"]["has_more"] is False
+        assert data["pagination"]["total_count"] == 0
+
 
 @pytest.mark.asyncio
 async def test_get_failed_application_details(test_client):
@@ -198,15 +251,20 @@ async def test_get_failed_application_details(test_client):
                 "description": "Test job description",
                 "portal": "LinkedIn",
                 "resume_optimized": json.dumps({"text": "test resume"}),
-                "cover_letter": json.dumps({"text": "test cover letter"})
+                "cover_letter": json.dumps({"text": "test cover letter"}),
             }
-        }
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.failed_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get(f"/fail_applied/{app_id}")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()
@@ -214,6 +272,7 @@ async def test_get_failed_application_details(test_client):
         assert "cover_letter" in data
         assert data["resume_optimized"]["text"] == "test resume"
         assert data["cover_letter"]["text"] == "test cover letter"
+
 
 @pytest.mark.asyncio
 async def test_get_failed_application_details_not_found(test_client):
@@ -226,20 +285,24 @@ async def test_get_failed_application_details_not_found(test_client):
             "different_app": {
                 "title": "Failed Job Application",
                 "description": "Test job description",
-                "portal": "LinkedIn"
+                "portal": "LinkedIn",
             }
-        }
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)), \
-         patch('app.routers.app_router.logger'):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.failed_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get(f"/fail_applied/{app_id}")
-        
+
         # Assert
-        # In actual code, the error is caught and re-raised as 500, so we check for 500
-        assert response.status_code == 500
+        assert response.status_code == 404
         assert "Application ID not found" in response.json()["detail"]
+
 
 @pytest.mark.asyncio
 async def test_get_failed_application_details_missing_fields(test_client):
@@ -252,16 +315,21 @@ async def test_get_failed_application_details_missing_fields(test_client):
             app_id: {
                 "title": "Failed Job Application",
                 "description": "Test job description",
-                "portal": "LinkedIn"
+                "portal": "LinkedIn",
                 # No resume_optimized or cover_letter
             }
-        }
+        },
     }
-    
-    with patch('app.routers.app_router.fetch_user_doc', AsyncMock(return_value=mock_doc)):
+
+    mock_collection = AsyncMock()
+    mock_collection.find_one = AsyncMock(return_value=mock_doc)
+
+    with patch(
+        "app.routers.app_router.failed_applications_collection", mock_collection
+    ):
         # Act
         response = test_client.get(f"/fail_applied/{app_id}")
-        
+
         # Assert
         assert response.status_code == 200
         data = response.json()

@@ -1,6 +1,6 @@
 """Queue management commands."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 from rich.table import Table
@@ -112,7 +112,7 @@ def purge_dlq(
 @app.command("reprocess-dlq")
 def reprocess_dlq(
     limit: Annotated[
-        int | None,
+        Optional[int],
         typer.Option("--limit", "-n", help="Maximum number of messages to reprocess"),
     ] = None,
     force: Annotated[

@@ -1,6 +1,6 @@
 """CLI entry point for Application Manager Service."""
 
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 from rich.console import Console
@@ -49,15 +49,15 @@ def main(
         ),
     ] = False,
     api_url: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--api-url", "-u", envvar="APP_MANAGER_API_URL", help="API URL"),
     ] = None,
     token: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--token", "-t", envvar="APP_MANAGER_API_TOKEN", help="JWT token"),
     ] = None,
     output_format: Annotated[
-        str | None,
+        Optional[str],
         typer.Option("--output", "-o", help="Output format (table, json)"),
     ] = None,
 ) -> None:
