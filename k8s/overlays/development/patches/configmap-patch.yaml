@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-manager-config
+data:
+  ENVIRONMENT: "development"
+  DEBUG: "true"
+  LOG_LEVEL: "DEBUG"
+  JSON_LOGS: "false"
+  CACHE_ENABLED: "false"
+  RATE_LIMIT_ENABLED: "false"
+  MIGRATIONS_AUTO_RUN: "true"

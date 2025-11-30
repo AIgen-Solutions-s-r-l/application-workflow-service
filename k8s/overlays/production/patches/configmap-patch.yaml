@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: application-manager-config
+data:
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+  JSON_LOGS: "true"
+  ENABLE_LOGSTASH: "true"
+  CACHE_ENABLED: "true"
+  RATE_LIMIT_ENABLED: "true"

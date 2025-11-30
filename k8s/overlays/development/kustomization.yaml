@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: application-manager-development
+
+namespace: application-manager-dev
+
+resources:
+  - ../../base
+
+nameSuffix: -dev
+
+patches:
+  - path: patches/deployment-patch.yaml
+  - path: patches/configmap-patch.yaml
+
+# Development uses lower resources and single replica
+replicas:
+  - name: application-manager
+    count: 1
+  - name: application-worker
+    count: 1
+
+images:
+  - name: application-manager-service
+    newTag: latest
