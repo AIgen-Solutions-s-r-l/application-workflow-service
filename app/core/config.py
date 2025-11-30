@@ -103,6 +103,12 @@ class Settings(BaseSettings):
     algorithm: str = os.getenv("ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
+    # Admin settings
+    admin_enabled: bool = os.getenv("ADMIN_ENABLED", "True").lower() == "true"
+    admin_role_claim: str = os.getenv("ADMIN_ROLE_CLAIM", "admin_role")
+    admin_audit_retention_days: int = int(os.getenv("ADMIN_AUDIT_RETENTION_DAYS", "90"))
+    admin_analytics_cache_ttl: int = int(os.getenv("ADMIN_ANALYTICS_CACHE_TTL", "300"))
+
     # Webhook settings
     webhooks_enabled: bool = os.getenv("WEBHOOKS_ENABLED", "True").lower() == "true"
     webhook_timeout_seconds: int = int(os.getenv("WEBHOOK_TIMEOUT_SECONDS", "30"))

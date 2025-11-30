@@ -777,6 +777,76 @@ def verify_signature(payload: dict, secret: str, signature: str) -> bool:
     return hmac.compare_digest(expected, signature)
 ```
 
+### Admin Dashboard API (`app/routers/admin_router.py`)
+
+Administrative API for system monitoring, analytics, and user management:
+
+```bash
+# Dashboard summary
+GET /admin/dashboard
+# Returns: user counts, application stats, queue depths, health status
+
+# Application analytics
+GET /admin/analytics/applications?period=day&group_by=status&from=2025-01-01
+# Returns: time-series data, totals, breakdown by field
+
+# User analytics
+GET /admin/analytics/users
+# Returns: top users, activity metrics
+
+# Error analytics
+GET /admin/analytics/errors
+# Returns: error breakdown by type, hourly trend
+
+# User management
+GET /admin/users?search=123&sort=total_applications&limit=20
+GET /admin/users/{user_id}
+POST /admin/users/{user_id}/actions?action=reset_rate_limit
+
+# Queue management
+GET /admin/queues
+POST /admin/queues/{queue_name}/actions?action=purge
+
+# Audit log
+GET /admin/audit-log?user_id=123&action=application.submitted
+
+# System info (ADMIN role required)
+GET /admin/system
+```
+
+**Role-Based Access Control:**
+- `VIEWER`: Read-only access (dashboard, analytics)
+- `OPERATOR`: Can manage queues, trigger actions
+- `ADMIN`: Full access including system configuration
+
+**JWT Token Claims:**
+```json
+{
+  "id": "user123",
+  "is_admin": true,
+  "admin_role": "operator"
+}
+```
+
+**Configuration:**
+```env
+ADMIN_ENABLED=true
+ADMIN_ROLE_CLAIM=admin_role
+ADMIN_AUDIT_RETENTION_DAYS=90
+ADMIN_ANALYTICS_CACHE_TTL=300
+```
+
+**CLI Commands:**
+```bash
+app-manager admin dashboard          # Show dashboard summary
+app-manager admin users              # List users
+app-manager admin user <id>          # Get user details
+app-manager admin analytics apps     # Application analytics
+app-manager admin analytics errors   # Error analytics
+app-manager admin queues             # Queue status
+app-manager admin system             # System configuration
+```
+
 ## Observability
 
 ### OpenTelemetry Tracing (`app/core/tracing.py`)
