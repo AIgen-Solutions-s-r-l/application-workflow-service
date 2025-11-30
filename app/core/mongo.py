@@ -35,3 +35,10 @@ resumes_collection = database["resumes"]
 pdf_resumes_collection = database["pdf_resumes"]
 success_applications_collection = database["success_app"]
 failed_applications_collection = database["failed_app"]
+
+# Webhook collections
+webhooks_collection = database["webhooks"]
+webhook_deliveries_collection = database["webhook_deliveries"]
+
+# Expose mongo_client for migrations and other uses
+mongo_client = client

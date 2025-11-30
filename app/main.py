@@ -18,9 +18,10 @@ from app.log.logging import logger
 from app.routers.v1 import router as v1_router
 from app.routers.v2 import router as v2_router
 
-# Non-versioned routers (health, metrics, websocket)
+# Non-versioned routers (health, metrics, websocket, webhooks)
 from app.routers.healthcheck_router import router as healthcheck_router
 from app.routers.metrics_router import router as metrics_router
+from app.routers.webhook_router import router as webhook_router
 from app.routers.websocket_router import router as websocket_router
 
 # Legacy routers for backward compatibility (will redirect to v1)
@@ -102,7 +103,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Application Manager Service",
     description="Manages job application workflows with async processing",
-    version="1.2.0",
+    version="1.3.0",
     lifespan=lifespan,
 )
 
@@ -146,10 +147,11 @@ app.include_router(v2_router)
 # Non-versioned Routers (Infrastructure)
 # =============================================================================
 
-# Health checks, metrics, and websocket don't need versioning
+# Health checks, metrics, websocket, and webhooks don't need versioning
 app.include_router(healthcheck_router)
 app.include_router(metrics_router)
 app.include_router(websocket_router)
+app.include_router(webhook_router)
 
 # =============================================================================
 # Legacy Routes (Backward Compatibility)

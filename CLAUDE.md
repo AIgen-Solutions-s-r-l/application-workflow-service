@@ -116,6 +116,8 @@ app/
 - `pdf_resumes`: User-uploaded PDF resumes
 - `success_app`: Successfully processed applications
 - `failed_app`: Failed applications
+- `webhooks`: Webhook registrations per user
+- `webhook_deliveries`: Webhook delivery history (TTL: 30 days)
 
 ### Application Status Lifecycle
 
@@ -688,6 +690,91 @@ GET /export/excel?date_from=2025-01-01&date_to=2025-12-31
 
 # Stream large exports
 GET /export/csv?stream=true
+```
+
+### Webhooks (`app/services/webhook_service.py`)
+
+Event-driven webhook notifications for external integrations:
+
+```bash
+# Create a webhook
+POST /webhooks
+{
+  "url": "https://example.com/webhook",
+  "events": ["application.submitted", "application.completed", "application.failed"],
+  "name": "My Webhook",
+  "description": "Notifications for my app"
+}
+# Response includes secret (shown only once!)
+
+# List webhooks
+GET /webhooks?include_disabled=false
+
+# Get webhook details
+GET /webhooks/{webhook_id}
+
+# Update webhook
+PATCH /webhooks/{webhook_id}
+{
+  "events": ["application.completed"],
+  "status": "active"
+}
+
+# Delete webhook
+DELETE /webhooks/{webhook_id}
+
+# Test webhook
+POST /webhooks/{webhook_id}/test
+
+# Rotate secret
+POST /webhooks/{webhook_id}/rotate-secret
+
+# View delivery history
+GET /webhooks/{webhook_id}/deliveries?limit=50
+```
+
+**Webhook Events:**
+- `application.submitted`: New application submitted
+- `application.processing`: Application started processing
+- `application.completed`: Application completed successfully
+- `application.failed`: Application failed
+- `batch.completed`: Batch processing completed
+- `rate_limit.exceeded`: Rate limit exceeded
+
+**Security:**
+- HMAC-SHA256 signature verification (header: `X-Webhook-Signature`)
+- HTTPS required (configurable)
+- Secret rotation support
+
+**Reliability:**
+- Exponential backoff retries (1m, 5m, 15m, 1h, 4h)
+- Auto-disable after consecutive failures (default: 10)
+- Delivery history with TTL (30 days)
+
+**Configuration:**
+```env
+WEBHOOKS_ENABLED=true
+WEBHOOK_TIMEOUT_SECONDS=30
+WEBHOOK_MAX_RETRIES=5
+WEBHOOK_AUTO_DISABLE_THRESHOLD=10
+WEBHOOK_REQUIRE_HTTPS=true
+WEBHOOK_MAX_PER_USER=10
+```
+
+**Verifying Webhook Signatures (Python example):**
+```python
+import hmac
+import hashlib
+import json
+
+def verify_signature(payload: dict, secret: str, signature: str) -> bool:
+    message = json.dumps(payload, sort_keys=True, default=str)
+    expected = "sha256=" + hmac.new(
+        secret.encode(),
+        message.encode(),
+        hashlib.sha256
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
 ```
 
 ## Observability

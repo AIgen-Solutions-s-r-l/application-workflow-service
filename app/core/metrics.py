@@ -172,6 +172,41 @@ DB_OPERATION_TOTAL = Counter(
 
 
 # =============================================================================
+# Webhook Metrics
+# =============================================================================
+
+WEBHOOK_DELIVERIES = Counter(
+    "webhook_deliveries_total",
+    "Total webhook delivery attempts",
+    ["event_type", "status"],  # status: success, failed, pending
+)
+
+WEBHOOK_DELIVERY_DURATION = Histogram(
+    "webhook_delivery_duration_seconds",
+    "Webhook delivery duration in seconds",
+    ["event_type"],
+    buckets=(0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0, 30.0),
+)
+
+WEBHOOK_RETRIES = Counter(
+    "webhook_retries_total",
+    "Total webhook retry attempts",
+    ["event_type", "attempt"],
+)
+
+WEBHOOKS_ACTIVE = Gauge(
+    "webhooks_active",
+    "Number of active webhooks",
+    ["user_id"],
+)
+
+WEBHOOKS_AUTO_DISABLED = Counter(
+    "webhooks_auto_disabled_total",
+    "Total webhooks auto-disabled due to failures",
+)
+
+
+# =============================================================================
 # Cache Metrics
 # =============================================================================
 
@@ -373,6 +408,35 @@ def set_cache_circuit_breaker_state(state: int):
         state: 0=closed, 1=open, 2=half_open
     """
     CACHE_CIRCUIT_BREAKER_STATE.set(state)
+
+
+def record_webhook_delivery(event_type: str, status: str, duration: float | None = None):
+    """
+    Record a webhook delivery attempt.
+
+    Args:
+        event_type: Type of webhook event (e.g., 'application.submitted')
+        status: Delivery status (success, failed, pending)
+        duration: Optional delivery duration in seconds
+    """
+    WEBHOOK_DELIVERIES.labels(event_type=event_type, status=status).inc()
+    if duration is not None:
+        WEBHOOK_DELIVERY_DURATION.labels(event_type=event_type).observe(duration)
+
+
+def record_webhook_retry(event_type: str, attempt: int):
+    """Record a webhook retry attempt."""
+    WEBHOOK_RETRIES.labels(event_type=event_type, attempt=str(attempt)).inc()
+
+
+def set_webhooks_active(user_id: str, count: int):
+    """Set the number of active webhooks for a user."""
+    WEBHOOKS_ACTIVE.labels(user_id=user_id).set(count)
+
+
+def record_webhook_auto_disabled():
+    """Record a webhook being auto-disabled due to failures."""
+    WEBHOOKS_AUTO_DISABLED.inc()
 
 
 def get_metrics() -> bytes:

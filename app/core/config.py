@@ -103,6 +103,16 @@ class Settings(BaseSettings):
     algorithm: str = os.getenv("ALGORITHM", "HS256")
     access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
+    # Webhook settings
+    webhooks_enabled: bool = os.getenv("WEBHOOKS_ENABLED", "True").lower() == "true"
+    webhook_timeout_seconds: int = int(os.getenv("WEBHOOK_TIMEOUT_SECONDS", "30"))
+    webhook_max_retries: int = int(os.getenv("WEBHOOK_MAX_RETRIES", "5"))
+    webhook_auto_disable_threshold: int = int(
+        os.getenv("WEBHOOK_AUTO_DISABLE_THRESHOLD", "10")
+    )
+    webhook_require_https: bool = os.getenv("WEBHOOK_REQUIRE_HTTPS", "True").lower() == "true"
+    webhook_max_per_user: int = int(os.getenv("WEBHOOK_MAX_PER_USER", "10"))
+
     # Environment-specific logging configuration
     @property
     def logging_config(self) -> dict:

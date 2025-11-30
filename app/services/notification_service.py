@@ -1,14 +1,16 @@
 """
-Notification service for publishing application events to RabbitMQ.
+Notification service for publishing application events to RabbitMQ and webhooks.
 
 This module provides enriched notification payloads for downstream consumers,
 replacing the basic {"updated": true} format with structured event data.
+Also dispatches events to registered webhooks.
 """
 
 from datetime import datetime
 
 from app.core.config import settings
 from app.log.logging import logger
+from app.models.webhook import WebhookEventType
 from app.services.base_publisher import BasePublisher
 
 
@@ -54,6 +56,19 @@ class NotificationPublisher(BasePublisher):
 
         await self.publish(payload, persistent=True)
 
+        # Dispatch to webhooks
+        await self._dispatch_webhook(
+            WebhookEventType.APPLICATION_SUBMITTED,
+            user_id,
+            {
+                "application_id": application_id,
+                "user_id": user_id,
+                "job_count": job_count,
+                "status": "pending",
+                "status_url": f"/applications/{application_id}/status",
+            },
+        )
+
     async def publish_status_changed(
         self,
         application_id: str,
@@ -93,6 +108,22 @@ class NotificationPublisher(BasePublisher):
         )
 
         await self.publish(payload, persistent=True)
+
+        # Dispatch to webhooks based on status
+        webhook_event = self._get_webhook_event_for_status(status)
+        if webhook_event:
+            webhook_payload = {
+                "application_id": application_id,
+                "user_id": user_id,
+                "status": status,
+                "job_count": job_count,
+            }
+            if previous_status:
+                webhook_payload["previous_status"] = previous_status
+            if error_reason:
+                webhook_payload["error_reason"] = error_reason
+
+            await self._dispatch_webhook(webhook_event, user_id, webhook_payload)
 
     async def publish_application_updated(self) -> None:
         """
@@ -152,3 +183,38 @@ class NotificationPublisher(BasePublisher):
             payload["error_reason"] = error_reason
 
         return payload
+
+    def _get_webhook_event_for_status(self, status: str) -> WebhookEventType | None:
+        """Map application status to webhook event type."""
+        status_to_event = {
+            "processing": WebhookEventType.APPLICATION_PROCESSING,
+            "success": WebhookEventType.APPLICATION_COMPLETED,
+            "failed": WebhookEventType.APPLICATION_FAILED,
+        }
+        return status_to_event.get(status)
+
+    async def _dispatch_webhook(
+        self,
+        event_type: WebhookEventType,
+        user_id: str,
+        payload: dict,
+    ) -> None:
+        """
+        Dispatch event to webhooks asynchronously.
+
+        This method catches and logs any errors to prevent webhook failures
+        from affecting the main notification flow.
+        """
+        try:
+            from app.services.webhook_service import webhook_service
+
+            await webhook_service.dispatch_event(event_type, user_id, payload)
+        except Exception as e:
+            # Log but don't raise - webhooks should not block main flow
+            logger.error(
+                "Failed to dispatch webhook event",
+                event_type="webhook_dispatch_error",
+                webhook_event=event_type.value,
+                user_id=user_id,
+                error=str(e),
+            )
