@@ -1,8 +1,10 @@
 # Application Manager Service
 
+[![Version](https://img.shields.io/badge/version-1.1.0-brightgreen.svg)](https://github.com/AIgen-Solutions-s-r-l/application-workflow-service/releases)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115.4-009688.svg)](https://fastapi.tiangolo.com)
 [![MongoDB](https://img.shields.io/badge/MongoDB-Motor-47A248.svg)](https://motor.readthedocs.io/)
+[![Redis](https://img.shields.io/badge/Redis-5.0+-DC382D.svg)](https://redis.io/)
 [![RabbitMQ](https://img.shields.io/badge/RabbitMQ-aio--pika-FF6600.svg)](https://aio-pika.readthedocs.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
